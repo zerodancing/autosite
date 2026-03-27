@@ -79,7 +79,10 @@
         >
           <div data-message-list class="space-y-3">
             {% for item in chat_messages %}
-              <div class="flex {% if item.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}">
+              <div
+                class="flex {% if item.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}"
+                data-message-id="{{ item.id }}"
+              >
                 <div class="{% if item.sender_id == user.id %}bg-slate-900 text-white{% else %}border border-slate-200 bg-white text-slate-900{% endif %} max-w-[88%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]">
                   {% if item.sender_id != user.id %}
                     <div class="mb-1 text-xs font-medium text-slate-500">{{ item.sender.full_name|default:item.sender.username }}</div>
@@ -160,8 +163,23 @@
     const pollUrl = "{% url 'support:api_get_messages' conversation.id %}?after=";
     const sendUrl = "{% url 'support:api_send_message' conversation.id %}";
     const activeConversationItem = document.querySelector('[data-conversation-id="{{ conversation.id }}"]');
+    const renderedMessageIds = new Set(
+      Array.from(messagesList.querySelectorAll('[data-message-id]')).map(function (node) {
+        return Number(node.dataset.messageId);
+      }).filter(function (value) {
+        return Number.isFinite(value) && value > 0;
+      })
+    );
+    const initialMessageCountMatch = chatCount ? chatCount.textContent.match(/\d+/) : null;
+    const messageCountLabel = chatCount
+      ? chatCount.textContent.replace(/\d+/g, '').trim()
+      : '';
 
     let lastId = {{ last_message_id|default:0 }};
+    let knownMessageCount = Math.max(
+      Number(initialMessageCountMatch ? initialMessageCountMatch[0] : 0),
+      renderedMessageIds.size
+    );
     let pollTimer = null;
     let isSending = false;
 
@@ -206,7 +224,40 @@
       }
     }
 
+    function syncMessageCounters() {
+      const messageCount = knownMessageCount;
+      if (chatCount) {
+        chatCount.textContent = 'РЎРѕРѕР±С‰РµРЅРёР№: ' + messageCount;
+      }
+
+      if (activeConversationItem) {
+        const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
+        if (sidebarCount) {
+          sidebarCount.textContent = 'РЎРѕРѕР±С‰РµРЅРёР№: ' + messageCount;
+        }
+      }
+    }
+
+    function refreshMessageCounters() {
+      const messageCountText = messageCountLabel ? messageCountLabel + ' ' + knownMessageCount : String(knownMessageCount);
+      if (chatCount) {
+        chatCount.textContent = messageCountText;
+      }
+
+      if (activeConversationItem) {
+        const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
+        if (sidebarCount) {
+          sidebarCount.textContent = messageCountText;
+        }
+      }
+    }
+
     function appendMessage(message) {
+      const messageId = Number(message.id);
+      if (Number.isFinite(messageId) && renderedMessageIds.has(messageId)) {
+        return false;
+      }
+
       const emptyState = document.querySelector('[data-empty-state]');
       if (emptyState) {
         emptyState.remove();
@@ -214,6 +265,12 @@
 
       const wrapper = document.createElement('div');
       wrapper.className = 'flex ' + (message.is_me ? 'justify-end' : 'justify-start');
+      if (Number.isFinite(messageId) && messageId > 0) {
+        wrapper.dataset.messageId = String(messageId);
+        renderedMessageIds.add(messageId);
+        lastId = Math.max(lastId, messageId);
+        knownMessageCount += 1;
+      }
 
       const bubble = document.createElement('div');
       bubble.className = (
@@ -242,10 +299,12 @@
       wrapper.appendChild(bubble);
       messagesList.appendChild(wrapper);
       updateSidebarPreview(message);
-      updateMessageCounters();
+      refreshMessageCounters();
       if (updatedBadge) {
         updatedBadge.textContent = formatTimestamp(message.created_at);
       }
+
+      return true;
     }
 
     async function poll() {
@@ -267,12 +326,14 @@
         }
 
         const items = data.messages || [];
+        let hasNewItems = false;
         for (const item of items) {
-          appendMessage(item);
-          lastId = item.id;
+          if (appendMessage(item)) {
+            hasNewItems = true;
+          }
         }
 
-        if (items.length > 0 && wasNearBottom) {
+        if (hasNewItems && wasNearBottom) {
           scrollChatToBottom(true);
         }
         pollStatus.textContent = 'Соединение активно';
@@ -321,7 +382,6 @@
         input.value = '';
         if (data.message) {
           appendMessage(data.message);
-          lastId = data.message.id;
           scrollChatToBottom(true);
         } else {
           await poll();

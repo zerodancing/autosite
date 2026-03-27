@@ -19,6 +19,7 @@ class SupportHomeTests(TestCase):
         response = self.client.get(reverse("support:support_home"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "lg:sticky lg:top-0")
         self.assertContains(response, "Поддержка")
         self.assertContains(response, "Создать обращение")
 
@@ -59,6 +60,8 @@ class SupportConversationDetailTests(TestCase):
         self.assertContains(response, "Чат поддержки")
         self.assertContains(response, "Привет")
         self.assertContains(response, "let lastId = 1;")
+        self.assertContains(response, 'data-message-id="1"')
+        self.assertContains(response, "const renderedMessageIds = new Set(")
 
     def test_client_cannot_open_foreign_conversation(self):
         other_user = CustomUser.objects.create_user(username="client2", password="testpass123")
