@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Заявка на услугу" %}{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-2xl">
+    <h1 class="text-2xl font-bold">{% trans "Заявка на услугу" %}</h1>
+
+    <div class="mt-6 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm">
+      <div class="text-xs text-slate-500">{{ service.category.name }}</div>
+      <div class="text-xl font-semibold mt-1">{{ service.title }}</div>
+      <div class="mt-1 text-sm text-slate-600">{% trans "Цена от" %}: {{ service.price_from }} ₽</div>
+
+      <form method="post" class="mt-5 space-y-4">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div>
+          <label class="text-sm text-slate-700" for="{{ form.scheduled_at.id_for_label }}">{{ form.scheduled_at.label }}</label>
+          {{ form.scheduled_at }}
+          {% if form.scheduled_at.errors %}
+            <div class="mt-2 text-sm text-rose-600">
+              {% for error in form.scheduled_at.errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-700" for="{{ form.customer_comment.id_for_label }}">{{ form.customer_comment.label }}</label>
+          {{ form.customer_comment }}
+          {% if form.customer_comment.errors %}
+            <div class="mt-2 text-sm text-rose-600">
+              {% for error in form.customer_comment.errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="w-full rounded-2xl bg-slate-900 px-5 py-3 text-white font-semibold hover:bg-slate-800 transition">
+          {% trans "Отправить заявку" %}
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

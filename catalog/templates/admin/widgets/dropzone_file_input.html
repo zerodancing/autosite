@@ -1,0 +1,22 @@
+<div class="admin-dropzone" data-admin-dropzone>
+  {% if widget.is_initial %}
+    <div class="admin-dropzone__current">
+      <span class="admin-dropzone__current-label">Текущий файл:</span>
+      <a href="{{ widget.value.url }}" target="_blank" rel="noopener">{{ widget.value }}</a>
+    </div>
+  {% endif %}
+
+  <input
+    type="{{ widget.type }}"
+    name="{{ widget.name }}"
+    {% include "django/forms/widgets/attrs.html" %}
+  >
+
+  <div class="admin-dropzone__surface" data-dropzone-surface tabindex="0" role="button">
+    <div class="admin-dropzone__headline">{{ widget.attrs.dropzone_title|default:"Перетащите файл сюда" }}</div>
+    <div class="admin-dropzone__hint">{{ widget.attrs.dropzone_hint|default:"или нажмите, чтобы выбрать" }}</div>
+  </div>
+
+  <div class="admin-dropzone__files" data-dropzone-files></div>
+  <div class="admin-dropzone__preview" data-dropzone-preview></div>
+</div>

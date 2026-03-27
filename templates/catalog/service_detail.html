@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ service.title }}{% endblock %}
+
+{% block content %}
+  <section class="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_380px]">
+    <div class="glass-panel overflow-hidden rounded-[2.4rem] p-6 sm:p-8">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <span class="editorial-kicker">Услуга</span>
+          <div class="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-400">{{ service.category.name }}</div>
+          <h1 class="headline-balance mt-3 max-w-4xl text-4xl font-bold text-slate-950 sm:text-5xl">
+            {{ service.title }}
+          </h1>
+        </div>
+        <div class="rounded-full bg-slate-950 px-4 py-2 text-sm font-extrabold text-white">
+          от {{ service.price_from }} ₽
+        </div>
+      </div>
+
+      <p class="mt-5 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+        {{ service.description }}
+      </p>
+
+      <div class="mt-8 grid gap-4 md:grid-cols-3">
+        <div class="rounded-[1.7rem] border border-slate-200 bg-white/[0.88] p-5">
+          <div class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Длительность</div>
+          <div class="mt-3 text-2xl font-bold text-slate-950">{{ service.duration_minutes }} мин</div>
+        </div>
+        <div class="rounded-[1.7rem] border border-slate-200 bg-white/[0.88] p-5">
+          <div class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Цена от</div>
+          <div class="mt-3 text-2xl font-bold text-slate-950">{{ service.price_from }} ₽</div>
+        </div>
+        <div class="rounded-[1.7rem] border border-slate-200 bg-white/[0.88] p-5">
+          <div class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Статус</div>
+          <div class="mt-3 text-2xl font-bold text-slate-950">Доступно</div>
+        </div>
+      </div>
+
+      <div class="mt-8 rounded-[2rem] bg-slate-950 p-6 text-white shadow-plate">
+        <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Как это ощущается</div>
+        <div class="mt-4 max-w-3xl text-2xl font-bold leading-tight">
+          Карточка услуги выглядит как полноценное предложение сервиса, а не как техническая страница.
+        </div>
+        <div class="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
+          Здесь можно дальше наращивать доверие: добавлять этапы работ, гарантию, отзывы, фото процесса, комплектации и блоки “почему стоит выбрать именно нас”.
+        </div>
+      </div>
+    </div>
+
+    <aside class="glass-panel rounded-[2.4rem] p-6">
+      <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Действия</div>
+      <div class="mt-4 rounded-[2rem] bg-slate-950 p-5 text-white shadow-plate">
+        <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Стоимость</div>
+        <div class="mt-2 text-3xl font-bold">{{ service.price_from }} ₽</div>
+        <div class="mt-2 text-sm text-slate-300">Ориентировочная цена старта по этой услуге.</div>
+      </div>
+
+      <div class="mt-5 space-y-3">
+        {% if user.is_authenticated %}
+          <a
+            href="{% url 'orders:create_service_order' service.id %}"
+            class="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-extrabold text-white transition hover:bg-slate-800"
+          >
+            Оформить заявку
+          </a>
+        {% else %}
+          <a
+            href="{% url 'accounts:login' %}?next={{ request.path }}"
+            class="block rounded-full bg-slate-950 px-5 py-3 text-center text-sm font-extrabold text-white transition hover:bg-slate-800"
+          >
+            Войти и оформить заявку
+          </a>
+        {% endif %}
+
+        <a
+          href="{% url 'support:support_home' %}"
+          class="block rounded-full border border-slate-200 bg-white px-5 py-3 text-center text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50"
+        >
+          Спросить в поддержке
+        </a>
+      </div>
+
+      <div class="mt-6 rounded-[1.8rem] border border-slate-200 bg-white/[0.85] p-5">
+        <div class="text-sm font-bold text-slate-950">Что можно добавить следующим этапом</div>
+        <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+          <div>Этапы выполнения услуги</div>
+          <div>Фото до и после</div>
+          <div>Сроки и гарантия</div>
+          <div>Связанные услуги и апсейл</div>
+        </div>
+      </div>
+    </aside>
+  </section>
+{% endblock %}

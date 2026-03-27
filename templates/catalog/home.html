@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+  <section class="relative overflow-hidden rounded-[2.6rem] bg-slate-950 text-white shadow-plate">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(244,106,52,0.28),_transparent_28rem)]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(141,198,255,0.18),_transparent_28rem)]"></div>
+    <div class="absolute inset-y-0 right-0 hidden w-[38%] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0))] lg:block"></div>
+
+    <div class="relative grid gap-6 px-6 py-7 lg:grid-cols-[minmax(0,1.25fr)_430px] lg:px-8 lg:py-8">
+      <div class="flex flex-col justify-between">
+        <div>
+          <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-200">
+            <span class="h-2 w-2 rounded-full bg-lime-300"></span>
+            Новый формат авто-платформы
+          </span>
+
+          <h1 class="headline-balance text-shadow-soft mt-6 max-w-4xl text-4xl font-bold leading-[0.96] sm:text-5xl xl:text-[4.7rem]">
+            Сервис, каталог и поддержка в одном премиальном авто-пространстве
+          </h1>
+
+          <p class="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+            Подбирайте автомобили, записывайтесь на услуги, задавайте вопросы в поддержку и управляйте обращениями в одном интерфейсе, который выглядит как большой современный авто-портал.
+          </p>
+
+          <div class="mt-7 flex flex-wrap gap-3">
+            <a
+              href="{% url 'catalog:cars_list' %}"
+              class="inline-flex items-center justify-center rounded-full bg-lime-300 px-6 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-lime-200"
+            >
+              Перейти в каталог машин
+            </a>
+            <a
+              href="{% url 'catalog:services_list' %}"
+              class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-white/10"
+            >
+              Смотреть услуги
+            </a>
+            <a
+              href="{% url 'support:support_home' %}"
+              class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-white/10"
+            >
+              Открыть поддержку
+            </a>
+          </div>
+        </div>
+
+        <div class="mt-7 grid gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
+          <form
+            action="{% url 'catalog:cars_list' %}"
+            method="get"
+            class="rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm"
+          >
+            <div class="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Быстрый старт</div>
+            <div class="mt-3 flex flex-col gap-3 sm:flex-row">
+              <input
+                name="q"
+                class="w-full rounded-full border border-white/10 bg-white/95 px-5 py-3 text-sm font-medium text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-white/50"
+                placeholder="Марка, модель или ключевое слово"
+              />
+              <button
+                type="submit"
+                class="rounded-full bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"
+              >
+                Найти автомобиль
+              </button>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              {% for brand in brands %}
+                <a
+                  href="{% url 'catalog:cars_list' %}?q={{ brand|urlencode }}"
+                  class="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                >
+                  {{ brand }}
+                </a>
+              {% empty %}
+                <span class="text-sm text-slate-400">Добавьте несколько машин в админке, и здесь появятся быстрые бренды.</span>
+              {% endfor %}
+            </div>
+          </form>
+
+          <div class="grid gap-3 sm:grid-cols-3 md:grid-cols-1">
+            <div class="rounded-[1.7rem] border border-white/10 bg-white/[0.06] px-4 py-4 backdrop-blur-sm">
+              <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Витрина авто</div>
+              <div class="mt-2 text-3xl font-bold">{{ cars_total }}</div>
+              <div class="mt-1 text-sm text-slate-300">машин уже в каталоге</div>
+            </div>
+            <div class="rounded-[1.7rem] border border-white/10 bg-white/[0.06] px-4 py-4 backdrop-blur-sm">
+              <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Сервис</div>
+              <div class="mt-2 text-3xl font-bold">{{ services_total }}</div>
+              <div class="mt-1 text-sm text-slate-300">активных услуг для записи</div>
+            </div>
+            <div class="rounded-[1.7rem] border border-white/10 bg-white/[0.06] px-4 py-4 backdrop-blur-sm">
+              <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Поддержка</div>
+              <div class="mt-2 text-3xl font-bold">1 окно</div>
+              <div class="mt-1 text-sm text-slate-300">чат, заявки и консультации</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-4">
+        {% if featured_car %}
+          <a
+            href="{% url 'catalog:car_detail' featured_car.id %}"
+            class="lift-on-hover group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 min-h-[24rem]"
+          >
+            {% with preview=featured_car.gallery_image_urls %}
+              {% if preview %}
+                <img
+                  src="{{ preview.0 }}"
+                  alt="{{ featured_car.brand }} {{ featured_car.model }}"
+                  class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                >
+              {% endif %}
+            {% endwith %}
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent"></div>
+            <div class="relative flex h-full flex-col justify-between p-5">
+              <div class="flex items-start justify-between gap-3">
+                <div class="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-white/80">
+                  Главный акцент
+                </div>
+                <div class="rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs font-semibold text-slate-100">
+                  {{ featured_car.category.name }}
+                </div>
+              </div>
+              <div>
+                <div class="text-sm font-medium text-slate-300">{{ featured_car.year }} • {{ featured_car.mileage_km }} км</div>
+                <div class="mt-2 max-w-sm text-3xl font-bold leading-tight text-white">
+                  {{ featured_car.brand }} {{ featured_car.model }}
+                </div>
+                <div class="mt-3 text-base font-semibold text-lime-300">
+                  {{ featured_car.price }} ₽
+                </div>
+              </div>
+            </div>
+          </a>
+        {% else %}
+          <div class="rounded-[2rem] border border-white/10 bg-white/5 p-5 text-slate-200">
+            Добавьте машины в админке, и здесь появится большой визуальный акцент главной страницы.
+          </div>
+        {% endif %}
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="lift-on-hover rounded-[1.8rem] border border-white/10 bg-white/5 p-5">
+            <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Популярная услуга</div>
+            {% if featured_service %}
+              <div class="mt-3 text-2xl font-bold leading-tight text-white">{{ featured_service.title }}</div>
+              <div class="mt-3 text-sm leading-6 text-slate-300">{{ featured_service.description|truncatechars:120 }}</div>
+              <div class="mt-4 flex items-center justify-between text-sm">
+                <span class="rounded-full bg-white/10 px-3 py-1.5 text-slate-100">{{ featured_service.duration_minutes }} мин</span>
+                <span class="font-bold text-lime-300">от {{ featured_service.price_from }} ₽</span>
+              </div>
+            {% else %}
+              <div class="mt-3 text-sm text-slate-300">Когда добавите услуги, этот блок начнёт показывать живую витрину сервиса.</div>
+            {% endif %}
+          </div>
+
+          <div class="lift-on-hover rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(244,106,52,0.18),rgba(255,255,255,0.04))] p-5">
+            <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-200">Чат с оператором</div>
+            <div class="mt-3 text-2xl font-bold leading-tight text-white">
+              Вопросы по машине, записи и заказам решаются в одном чате
+            </div>
+            <p class="mt-3 text-sm leading-6 text-slate-200/90">
+              Поддержка уже встроена в сайт, поэтому пользователь не теряется между формами и мессенджерами.
+            </p>
+            <a
+              href="{% url 'support:support_home' %}"
+              class="mt-5 inline-flex items-center justify-center rounded-full bg-white px-4 py-2.5 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"
+            >
+              Открыть чат поддержки
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-10 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+    <div class="glass-panel rounded-[2.2rem] p-6">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span class="editorial-kicker">Навигация</span>
+          <h2 class="headline-balance mt-4 text-3xl font-bold text-slate-950">Быстрые входы в нужный сценарий</h2>
+        </div>
+        <div class="text-sm text-slate-500">Сразу в нужный раздел без лишних шагов</div>
+      </div>
+
+      <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <a href="{% url 'catalog:cars_list' %}" class="lift-on-hover rounded-[1.8rem] border border-slate-200 bg-white/80 p-5">
+          <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-lg font-bold text-white">01</div>
+          <div class="mt-4 text-xl font-bold text-slate-950">Каталог машин</div>
+          <p class="mt-3 text-sm leading-6 text-slate-600">
+            Витрина автомобилей с фотографиями, фильтрами, детальной карточкой и характеристиками.
+          </p>
+        </a>
+        <a href="{% url 'catalog:services_list' %}" class="lift-on-hover rounded-[1.8rem] border border-slate-200 bg-white/80 p-5">
+          <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-orange)] text-lg font-bold text-white">02</div>
+          <div class="mt-4 text-xl font-bold text-slate-950">Каталог услуг</div>
+          <p class="mt-3 text-sm leading-6 text-slate-600">
+            Диагностика, обслуживание и записи на сервис в привычном и понятном потоке.
+          </p>
+        </a>
+        <a href="{% url 'support:support_home' %}" class="lift-on-hover rounded-[1.8rem] border border-slate-200 bg-white/80 p-5">
+          <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-sky)] text-lg font-bold text-slate-950">03</div>
+          <div class="mt-4 text-xl font-bold text-slate-950">Поддержка</div>
+          <p class="mt-3 text-sm leading-6 text-slate-600">
+            Живой чат, новые обращения и история общения в одном месте как у зрелого продукта.
+          </p>
+        </a>
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-[2.2rem] p-6">
+      <span class="editorial-kicker">Фокус</span>
+      <h2 class="mt-4 text-3xl font-bold text-slate-950">Популярные категории</h2>
+
+      <div class="mt-6 space-y-3">
+        {% for category in car_categories %}
+          <a
+            href="{% url 'catalog:cars_list' %}?category={{ category.slug|urlencode }}"
+            class="lift-on-hover flex items-center justify-between rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4"
+          >
+            <div>
+              <div class="text-sm font-bold text-slate-950">{{ category.name }}</div>
+              <div class="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">категория машин</div>
+            </div>
+            <div class="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-bold text-white">
+              {{ category.item_count }}
+            </div>
+          </a>
+        {% empty %}
+          <div class="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4 text-sm text-slate-500">
+            Как только появятся категории машин, здесь будут быстрые переходы.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-10">
+    <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div>
+        <span class="editorial-kicker">Каталог машин</span>
+        <h2 class="headline-balance mt-4 text-3xl font-bold text-slate-950 sm:text-4xl">
+          Машины поданы как editorial-витрина, а не как скучный список
+        </h2>
+      </div>
+      <a
+        href="{% url 'catalog:cars_list' %}"
+        class="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-slate-800"
+      >
+        Все машины
+      </a>
+    </div>
+
+    <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+      {% if featured_car %}
+        <a
+          href="{% url 'catalog:car_detail' featured_car.id %}"
+          class="lift-on-hover group relative overflow-hidden rounded-[2.2rem] border border-slate-200 bg-slate-900 min-h-[34rem]"
+        >
+          {% with preview=featured_car.gallery_image_urls %}
+            {% if preview %}
+              <img
+                src="{{ preview.0 }}"
+                alt="{{ featured_car.brand }} {{ featured_car.model }}"
+                class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              >
+            {% endif %}
+          {% endwith %}
+          <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/50 to-transparent"></div>
+          <div class="relative flex h-full max-w-xl flex-col justify-end p-6 sm:p-8">
+            <div class="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-slate-200 w-fit">
+              Выбор редакции витрины
+            </div>
+            <div class="mt-4 text-sm font-medium text-slate-300">
+              {{ featured_car.category.name }} • {{ featured_car.year }} • {{ featured_car.mileage_km }} км
+            </div>
+            <div class="mt-2 text-4xl font-bold leading-tight text-white">
+              {{ featured_car.brand }} {{ featured_car.model }}
+            </div>
+            {% if featured_car.description %}
+              <div class="mt-4 max-w-lg text-sm leading-7 text-slate-300">
+                {{ featured_car.description|truncatechars:220 }}
+              </div>
+            {% endif %}
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <span class="rounded-full bg-lime-300 px-4 py-2 text-sm font-extrabold text-slate-950">
+                {{ featured_car.price }} ₽
+              </span>
+              <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200">
+                Подробнее
+              </span>
+            </div>
+          </div>
+        </a>
+      {% endif %}
+
+      <div class="grid gap-4">
+        {% for car in cars|slice:"1:5" %}
+          <a
+            href="{% url 'catalog:car_detail' car.id %}"
+            class="lift-on-hover grid gap-4 rounded-[2rem] border border-slate-200 bg-white/90 p-4 md:grid-cols-[140px_minmax(0,1fr)]"
+          >
+            <div class="overflow-hidden rounded-[1.4rem] bg-slate-100">
+              {% with preview=car.gallery_image_urls %}
+                {% if preview %}
+                  <img src="{{ preview.0 }}" alt="{{ car.brand }} {{ car.model }}" class="h-full min-h-[9rem] w-full object-cover">
+                {% endif %}
+              {% endwith %}
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">{{ car.category.name }}</div>
+              <div class="mt-2 text-xl font-bold text-slate-950">{{ car.brand }} {{ car.model }}</div>
+              <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                <span class="rounded-full bg-slate-100 px-3 py-1.5">{{ car.year }}</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1.5">{{ car.mileage_km }} км</span>
+                {% if car.fuel_type %}
+                  <span class="rounded-full bg-slate-100 px-3 py-1.5">{{ car.fuel_type }}</span>
+                {% endif %}
+              </div>
+              {% if car.description %}
+                <div class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
+                  {{ car.description }}
+                </div>
+              {% endif %}
+              <div class="mt-4 text-base font-bold text-slate-950">{{ car.price }} ₽</div>
+            </div>
+          </a>
+        {% empty %}
+          <div class="rounded-[2rem] border border-dashed border-slate-300 bg-white/80 p-6 text-sm text-slate-500">
+            Добавьте несколько автомобилей, и правая колонка заполнится карточками.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="mt-10 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+    <div class="glass-panel rounded-[2.2rem] p-6">
+      <span class="editorial-kicker">Сервис</span>
+      <h2 class="mt-4 text-3xl font-bold text-slate-950 sm:text-4xl">Услуги поданы как готовые сценарии, а не просто прайс</h2>
+
+      <div class="mt-6 grid gap-4">
+        {% if featured_service %}
+          <a
+            href="{% url 'catalog:service_detail' featured_service.id %}"
+            class="lift-on-hover rounded-[2rem] bg-slate-950 p-6 text-white"
+          >
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{{ featured_service.category.name }}</div>
+                <div class="mt-3 text-3xl font-bold leading-tight">{{ featured_service.title }}</div>
+              </div>
+              <div class="rounded-full bg-lime-300 px-4 py-2 text-sm font-extrabold text-slate-950">
+                от {{ featured_service.price_from }} ₽
+              </div>
+            </div>
+            <div class="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+              {{ featured_service.description|truncatechars:220 }}
+            </div>
+            <div class="mt-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white">
+              Открыть карточку услуги
+            </div>
+          </a>
+        {% endif %}
+
+        <div class="grid gap-4 md:grid-cols-2">
+          {% for category in service_categories %}
+            <a
+              href="{% url 'catalog:services_list' %}?category={{ category.slug|urlencode }}"
+              class="lift-on-hover rounded-[1.7rem] border border-slate-200 bg-white/90 p-5"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-lg font-bold text-slate-950">{{ category.name }}</div>
+                  {% if category.description %}
+                    <div class="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{{ category.description }}</div>
+                  {% else %}
+                    <div class="mt-2 text-sm leading-6 text-slate-600">
+                      Быстрый переход в раздел услуг по этому направлению.
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-bold text-white">
+                  {{ category.item_count }}
+                </div>
+              </div>
+            </a>
+          {% empty %}
+            <div class="rounded-[1.7rem] border border-dashed border-slate-300 bg-white/80 p-5 text-sm text-slate-500 md:col-span-2">
+              Категории услуг появятся здесь автоматически, когда вы наполните каталог.
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-5">
+      <div class="glass-panel rounded-[2.2rem] p-6">
+        <span class="editorial-kicker">Сильные стороны</span>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-[1.7rem] bg-white/[0.85] p-5">
+            <div class="text-sm font-bold text-slate-950">Удобная админка</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              Картинки машин теперь загружаются как нормальная галерея, а не только по URL.
+            </p>
+          </div>
+          <div class="rounded-[1.7rem] bg-white/[0.85] p-5">
+            <div class="text-sm font-bold text-slate-950">Живой чат поддержки</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              Пользователь и оператор общаются прямо на сайте, без внешних сервисов.
+            </p>
+          </div>
+          <div class="rounded-[1.7rem] bg-white/[0.85] p-5">
+            <div class="text-sm font-bold text-slate-950">Красивые карточки</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              Машины и услуги смотрятся как витрина современного авто-медиа продукта.
+            </p>
+          </div>
+          <div class="rounded-[1.7rem] bg-white/[0.85] p-5">
+            <div class="text-sm font-bold text-slate-950">Готовность к росту</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              На эту базу уже можно спокойно навешивать сравнение, избранное, журнал и подбор.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glow-ring overflow-hidden rounded-[2.2rem] bg-slate-950 p-6 text-white shadow-plate">
+        <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Следующий шаг</div>
+        <div class="headline-balance mt-4 max-w-2xl text-3xl font-bold leading-tight">
+          Теперь можно точно так же подтянуть каталог, страницу машины и функционал “как у большого авто-портала”
+        </div>
+        <p class="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+          Основа уже стала сильнее: визуальный язык задан, hero работает, быстрые переходы есть, витрина ощущается современной. Дальше логично добивать расширенный поиск, сравнение, избранное и editorial-раздел.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a
+            href="{% url 'catalog:cars_list' %}"
+            class="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-slate-100"
+          >
+            Доработать каталог
+          </a>
+          <a
+            href="{% url 'catalog:services_list' %}"
+            class="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-white/10"
+          >
+            Открыть услуги
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% load i18n %}
+<header class="sticky top-0 z-40 px-4 pt-3 sm:px-5 lg:px-8">
+  <div class="mx-auto max-w-[1440px]">
+    <div class="mb-3 hidden items-center justify-between rounded-full bg-slate-950 px-5 py-2 text-xs font-medium text-slate-200 lg:flex">
+      <div class="flex items-center gap-4">
+        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
+          <span class="h-2 w-2 rounded-full bg-lime-300"></span>
+          Онлайн-консультация и подбор автомобиля
+        </span>
+        <span class="text-slate-400">Ежедневно 09:00-21:00</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-300">
+        <a class="transition hover:text-white" href="{% url 'catalog:services_list' %}">Диагностика</a>
+        <a class="transition hover:text-white" href="{% url 'catalog:cars_list' %}">Каталог авто</a>
+        <a class="transition hover:text-white" href="{% url 'support:support_home' %}">Поддержка</a>
+        {% if user.is_staff %}
+          <a class="transition hover:text-white" href="/admin/">Админ-панель</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-[2rem] px-4 py-4 sm:px-6">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex items-center justify-between gap-4">
+          <a href="{% url 'catalog:home' %}" class="group flex items-center gap-4">
+            <div class="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white shadow-soft">
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(215,255,99,0.35),_transparent_60%)]"></div>
+              <span class="relative text-lg font-bold tracking-[0.18em]">AS</span>
+            </div>
+            <div class="leading-tight">
+              <div class="text-lg font-extrabold tracking-tight text-slate-950">Автосервис</div>
+              <div class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Сервис, каталог и поддержка
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="{% url 'support:support_home' %}"
+            class="inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white xl:hidden"
+          >
+            <span class="h-2 w-2 rounded-full bg-lime-300"></span>
+            Поддержка
+          </a>
+        </div>
+
+        <nav class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700">
+          <a class="rounded-full px-4 py-2 transition hover:bg-slate-950 hover:text-white" href="{% url 'catalog:services_list' %}">
+            Услуги
+          </a>
+          <a class="rounded-full px-4 py-2 transition hover:bg-slate-950 hover:text-white" href="{% url 'catalog:cars_list' %}">
+            Машины
+          </a>
+          <a class="rounded-full px-4 py-2 transition hover:bg-slate-950 hover:text-white" href="{% url 'support:support_home' %}">
+            Поддержка
+          </a>
+          {% if user.is_authenticated %}
+            <a class="rounded-full px-4 py-2 transition hover:bg-slate-950 hover:text-white" href="{% url 'orders:my_orders' %}">
+              Мои заказы
+            </a>
+          {% endif %}
+        </nav>
+
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            data-theme-toggle
+            class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white"
+          >
+            <span data-theme-icon aria-hidden="true">☾</span>
+            <span data-theme-action-label>Тёмная тема</span>
+          </button>
+
+          <div class="hidden items-center gap-2 rounded-full bg-white/70 px-2 py-1 lg:flex">
+            {% for code, label in LANGUAGES %}
+              <a
+                href="{% url 'set_language' code %}?next={{ request.path }}"
+                class="rounded-full px-3 py-1.5 text-xs font-semibold transition {% if code == LANGUAGE_CODE %}bg-slate-950 text-white{% else %}text-slate-600 hover:bg-slate-100 hover:text-slate-950{% endif %}"
+              >
+                {{ code|upper }}
+              </a>
+            {% endfor %}
+          </div>
+
+          {% if user.is_authenticated %}
+            <a
+              href="{% url 'accounts:profile' %}"
+              class="rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white"
+            >
+              {{ user.username }}
+            </a>
+            <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Выйти
+              </button>
+            </form>
+          {% else %}
+            <a
+              href="{% url 'accounts:login' %}"
+              class="rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white"
+            >
+              Вход
+            </a>
+            <a
+              href="{% url 'accounts:signup' %}"
+              class="rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Регистрация
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

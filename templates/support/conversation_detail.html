@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Поддержка{% endblock %}
+
+{% block content %}
+  <div class="mx-auto max-w-7xl">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Чат поддержки</h1>
+        <p class="mt-2 text-sm text-slate-600">
+          Диалог #{{ conversation.id }}. Сообщения обновляются автоматически, а история остаётся в списке слева.
+        </p>
+      </div>
+      <a
+        href="{% url 'support:support_home' %}"
+        class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+      >
+        Все обращения
+      </a>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+      {% include "support/includes/conversation_sidebar.html" %}
+
+      <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-5 text-white">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0">
+              <div class="text-xs font-medium uppercase tracking-[0.18em] text-slate-300">Открытый диалог</div>
+              <h2 class="mt-3 truncate text-2xl font-semibold">
+                {{ conversation.subject|default:"Без темы" }}
+              </h2>
+              <div class="mt-3 flex flex-wrap gap-2 text-sm text-slate-300">
+                <div class="rounded-full border border-white/15 px-3 py-1">
+                  Создан: {{ conversation.created_at|date:"d.m.Y H:i" }}
+                </div>
+                <div class="rounded-full border border-white/15 px-3 py-1">
+                  Обновлён: <span data-conversation-updated>{{ conversation.updated_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div data-chat-count class="rounded-full border border-white/15 px-3 py-1">
+                  Сообщений: {{ conversation.message_count }}
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-sm text-slate-200">
+              {% if user.is_staff %}
+                <div>
+                  Клиент:
+                  <span class="font-medium text-white">
+                    {{ conversation.client.full_name|default:conversation.client.username }}
+                  </span>
+                </div>
+              {% endif %}
+              <div>
+                {% if conversation.assigned_operator %}
+                  Оператор:
+                  <span class="font-medium text-white">
+                    {{ conversation.assigned_operator.full_name|default:conversation.assigned_operator.username }}
+                  </span>
+                {% else %}
+                  <span class="font-medium text-white">
+                    {% if user.is_staff %}
+                      Этот диалог пока никем не закреплён.
+                    {% else %}
+                      Диалог ожидает ответа оператора.
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </div>
+              <div id="poll-status" class="text-xs text-slate-400">Соединение активно</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="chat-box"
+          class="h-[56vh] min-h-[24rem] overflow-y-auto bg-gradient-to-b from-white via-slate-50 to-slate-100 px-4 py-5 sm:px-6"
+        >
+          <div data-message-list class="space-y-3">
+            {% for item in chat_messages %}
+              <div class="flex {% if item.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}">
+                <div class="{% if item.sender_id == user.id %}bg-slate-900 text-white{% else %}border border-slate-200 bg-white text-slate-900{% endif %} max-w-[88%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]">
+                  {% if item.sender_id != user.id %}
+                    <div class="mb-1 text-xs font-medium text-slate-500">{{ item.sender.full_name|default:item.sender.username }}</div>
+                  {% endif %}
+                  <div class="whitespace-pre-wrap break-words text-sm leading-6">{{ item.text }}</div>
+                  <div class="mt-2 text-[11px] {% if item.sender_id == user.id %}text-slate-300{% else %}text-slate-400{% endif %}">
+                    {{ item.created_at|date:"d.m.Y H:i" }}
+                  </div>
+                </div>
+              </div>
+            {% empty %}
+              <div data-empty-state class="flex h-full min-h-60 items-center justify-center">
+                <div class="max-w-md rounded-[1.8rem] border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-center shadow-sm">
+                  <div class="text-lg font-semibold text-slate-900">Пока нет сообщений</div>
+                  <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Напишите первое сообщение ниже. Диалог сразу начнёт обновляться в реальном времени.
+                  </p>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <form id="send-form" class="space-y-3">
+            {% csrf_token %}
+            <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-3">
+              <textarea
+                id="message-input"
+                class="min-h-28 w-full resize-none border-0 bg-transparent px-1 py-1 text-sm leading-6 outline-none focus:ring-0"
+                maxlength="2000"
+                placeholder="Напишите сообщение. Enter отправляет, Shift+Enter переносит строку."
+              ></textarea>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div id="send-error" class="hidden text-sm text-rose-600"></div>
+              <div class="flex items-center gap-3 sm:ml-auto">
+                <div class="text-xs text-slate-500">Лимит: 2000 символов</div>
+                <button
+                  id="send-button"
+                  type="submit"
+                  class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                >
+                  Отправить
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    function formatTimestamp(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return date.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    const chatBox = document.getElementById('chat-box');
+    const messagesList = document.querySelector('[data-message-list]');
+    const input = document.getElementById('message-input');
+    const sendError = document.getElementById('send-error');
+    const sendButton = document.getElementById('send-button');
+    const pollStatus = document.getElementById('poll-status');
+    const chatCount = document.querySelector('[data-chat-count]');
+    const updatedBadge = document.querySelector('[data-conversation-updated]');
+    const sendForm = document.getElementById('send-form');
+    const csrfInput = sendForm.querySelector('input[name="csrfmiddlewaretoken"]');
+    const csrftoken = csrfInput ? csrfInput.value : '';
+    const pollUrl = "{% url 'support:api_get_messages' conversation.id %}?after=";
+    const sendUrl = "{% url 'support:api_send_message' conversation.id %}";
+    const activeConversationItem = document.querySelector('[data-conversation-id="{{ conversation.id }}"]');
+
+    let lastId = {{ last_message_id|default:0 }};
+    let pollTimer = null;
+    let isSending = false;
+
+    function scrollChatToBottom(force) {
+      const distanceToBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
+      if (force || distanceToBottom < 100) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    function updateSidebarPreview(message) {
+      if (!activeConversationItem || !message) return;
+
+      const preview = activeConversationItem.querySelector('[data-conversation-preview]');
+      const time = activeConversationItem.querySelector('[data-conversation-time]');
+      if (preview) {
+        preview.textContent = message.text;
+      }
+      if (time) {
+        const date = new Date(message.created_at);
+        time.textContent = date.toLocaleString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+    }
+
+    function updateMessageCounters() {
+      if (chatCount) {
+        const currentCount = Number((chatCount.textContent.match(/\d+/) || ['0'])[0]);
+        chatCount.textContent = 'Сообщений: ' + (currentCount + 1);
+      }
+
+      if (activeConversationItem) {
+        const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
+        if (sidebarCount) {
+          const currentCount = Number((sidebarCount.textContent.match(/\d+/) || ['0'])[0]);
+          sidebarCount.textContent = 'Сообщений: ' + (currentCount + 1);
+        }
+      }
+    }
+
+    function appendMessage(message) {
+      const emptyState = document.querySelector('[data-empty-state]');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex ' + (message.is_me ? 'justify-end' : 'justify-start');
+
+      const bubble = document.createElement('div');
+      bubble.className = (
+        message.is_me
+          ? 'bg-slate-900 text-white'
+          : 'border border-slate-200 bg-white text-slate-900'
+      ) + ' max-w-[88%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]';
+
+      if (!message.is_me) {
+        const name = document.createElement('div');
+        name.className = 'mb-1 text-xs font-medium text-slate-500';
+        name.textContent = message.sender;
+        bubble.appendChild(name);
+      }
+
+      const text = document.createElement('div');
+      text.className = 'whitespace-pre-wrap break-words text-sm leading-6';
+      text.textContent = message.text;
+      bubble.appendChild(text);
+
+      const meta = document.createElement('div');
+      meta.className = 'mt-2 text-[11px] ' + (message.is_me ? 'text-slate-300' : 'text-slate-400');
+      meta.textContent = formatTimestamp(message.created_at);
+      bubble.appendChild(meta);
+
+      wrapper.appendChild(bubble);
+      messagesList.appendChild(wrapper);
+      updateSidebarPreview(message);
+      updateMessageCounters();
+      if (updatedBadge) {
+        updatedBadge.textContent = formatTimestamp(message.created_at);
+      }
+    }
+
+    async function poll() {
+      try {
+        const wasNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 120;
+        const response = await fetch(pollUrl + encodeURIComponent(lastId), {
+          headers: { 'Accept': 'application/json' },
+          credentials: 'same-origin'
+        });
+        if (!response.ok) {
+          pollStatus.textContent = 'Не удалось обновить сообщения';
+          return;
+        }
+
+        const data = await response.json();
+        if (!data.ok) {
+          pollStatus.textContent = 'Не удалось обновить сообщения';
+          return;
+        }
+
+        const items = data.messages || [];
+        for (const item of items) {
+          appendMessage(item);
+          lastId = item.id;
+        }
+
+        if (items.length > 0 && wasNearBottom) {
+          scrollChatToBottom(true);
+        }
+        pollStatus.textContent = 'Соединение активно';
+      } catch (error) {
+        pollStatus.textContent = 'Ошибка соединения';
+      }
+    }
+
+    async function sendMessage() {
+      if (isSending) return;
+
+      const text = (input.value || '').trim();
+      if (!text) return;
+
+      isSending = true;
+      sendButton.disabled = true;
+      sendError.classList.add('hidden');
+
+      if (!csrftoken) {
+        sendError.textContent = 'Не удалось получить защитный токен. Обновите страницу и попробуйте снова.';
+        sendError.classList.remove('hidden');
+        isSending = false;
+        sendButton.disabled = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(sendUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRFToken': csrftoken
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({ text })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) {
+          sendError.textContent = data.error || 'Не удалось отправить сообщение.';
+          sendError.classList.remove('hidden');
+          return;
+        }
+
+        input.value = '';
+        if (data.message) {
+          appendMessage(data.message);
+          lastId = data.message.id;
+          scrollChatToBottom(true);
+        } else {
+          await poll();
+        }
+      } catch (error) {
+        sendError.textContent = 'Ошибка сети. Попробуйте ещё раз.';
+        sendError.classList.remove('hidden');
+      } finally {
+        isSending = false;
+        sendButton.disabled = false;
+        input.focus();
+      }
+    }
+
+    sendForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      await sendMessage();
+    });
+
+    input.addEventListener('keydown', async function (event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        await sendMessage();
+      }
+    });
+
+    pollTimer = window.setInterval(poll, 2500);
+    scrollChatToBottom(true);
+  </script>
+{% endblock %}

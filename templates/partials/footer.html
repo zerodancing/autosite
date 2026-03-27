@@ -1,0 +1,87 @@
+<footer class="px-4 pb-6 pt-10 sm:px-5 lg:px-8">
+  <div class="mx-auto max-w-[1440px]">
+    <div class="glass-panel overflow-hidden rounded-[2.25rem] border border-white/40">
+      <div class="grid gap-8 px-6 py-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr] lg:px-8">
+        <div>
+          <div class="inline-flex items-center gap-3">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-soft">
+              <span class="text-lg font-bold tracking-[0.18em]">AS</span>
+            </div>
+            <div>
+              <div class="text-lg font-extrabold text-slate-950">Автосервис</div>
+              <div class="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                Премиальная витрина автоуслуг
+              </div>
+            </div>
+          </div>
+          <p class="mt-5 max-w-md text-sm leading-7 text-slate-600">
+            Платформа для подбора автомобилей, записи на услуги, общения с поддержкой и удобного управления заявками в одном месте.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-2">
+            <a href="{% url 'catalog:cars_list' %}" class="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white">
+              Каталог машин
+            </a>
+            <a href="{% url 'catalog:services_list' %}" class="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white">
+              Услуги
+            </a>
+            <a href="{% url 'support:support_home' %}" class="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-white">
+              Поддержка
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-sm font-extrabold uppercase tracking-[0.18em] text-slate-500">Разделы</div>
+          <div class="mt-5 space-y-3 text-sm font-semibold text-slate-800">
+            <a class="block transition hover:text-slate-950" href="{% url 'catalog:home' %}">Главная</a>
+            <a class="block transition hover:text-slate-950" href="{% url 'catalog:services_list' %}">Каталог услуг</a>
+            <a class="block transition hover:text-slate-950" href="{% url 'catalog:cars_list' %}">Каталог машин</a>
+            <a class="block transition hover:text-slate-950" href="{% url 'support:support_home' %}">Чат поддержки</a>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-sm font-extrabold uppercase tracking-[0.18em] text-slate-500">Аккаунт</div>
+          <div class="mt-5 space-y-3 text-sm font-semibold text-slate-800">
+            {% if user.is_authenticated %}
+              <a class="block transition hover:text-slate-950" href="{% url 'accounts:profile' %}">Профиль</a>
+              <a class="block transition hover:text-slate-950" href="{% url 'orders:my_orders' %}">Мои заказы</a>
+            {% else %}
+              <a class="block transition hover:text-slate-950" href="{% url 'accounts:login' %}">Вход</a>
+              <a class="block transition hover:text-slate-950" href="{% url 'accounts:signup' %}">Регистрация</a>
+            {% endif %}
+            {% if user.is_staff %}
+              <a class="block transition hover:text-slate-950" href="/admin/">Админ-панель</a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="glow-ring rounded-[1.75rem] bg-slate-950 p-5 text-white shadow-plate">
+          <div class="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">Статус</div>
+          <div class="mt-3 text-2xl font-bold leading-tight">Сайт готов к росту</div>
+          <p class="mt-3 text-sm leading-6 text-slate-300">
+            Безопасная база, админка, каталог, заказы и поддержка уже работают как единая система.
+          </p>
+          <div class="mt-5 grid grid-cols-2 gap-3 text-xs text-slate-300">
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+              CSRF и валидация
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+              Чат и заказы
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+              Галереи авто
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+              Русская админка
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200/70 px-6 py-4 text-xs text-slate-500 lg:px-8">
+        Учебный проект с витриной автосервиса и каталога автомобилей. Дальше сюда можно безболезненно наращивать поиск, сравнение, избранное, журнал и подбор.
+      </div>
+    </div>
+  </div>
+</footer>
