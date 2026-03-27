@@ -22,6 +22,14 @@ services:
         sync: false
       - key: DJANGO_DB_CONN_MAX_AGE
         value: "600"
+      - key: DJANGO_BOOTSTRAP_SUPERUSER
+        value: "0"
+      - key: DJANGO_BOOTSTRAP_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_BOOTSTRAP_SUPERUSER_PASSWORD
+        sync: false
+      - key: DJANGO_BOOTSTRAP_SUPERUSER_EMAIL
+        sync: false
       - key: DJANGO_LOAD_DEMO_FIXTURE
         value: "0"
       - key: DJANGO_SECURE_SSL_REDIRECT
