@@ -1,0 +1,134 @@
+[
+  {
+    "model": "catalog.carcategory",
+    "pk": 101,
+    "fields": {
+      "name": "Porsche",
+      "slug": "porsche"
+    }
+  },
+  {
+    "model": "catalog.carcategory",
+    "pk": 102,
+    "fields": {
+      "name": "Tesla",
+      "slug": "tesla"
+    }
+  },
+  {
+    "model": "catalog.carcategory",
+    "pk": 103,
+    "fields": {
+      "name": "Volkswagen",
+      "slug": "volkswagen"
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1001,
+    "fields": {
+      "category": 101,
+      "brand": "Porsche",
+      "model": "718 Boxster 982",
+      "year": 2017,
+      "price": "74500.00",
+      "mileage_km": 42800,
+      "fuel_type": "Бензин",
+      "transmission": "Робот",
+      "color": "Серебристый",
+      "image_url": "Porsche/Porsche 718 Boxster 982 1.webp",
+      "description": "Лёгкий спортивный родстер для тестовой витрины. Галерея берётся из набора изображений 1..5.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1002,
+    "fields": {
+      "category": 101,
+      "brand": "Porsche",
+      "model": "718 Cayman GT4 RS 982",
+      "year": 2024,
+      "price": "186900.00",
+      "mileage_km": 3200,
+      "fuel_type": "Бензин",
+      "transmission": "Робот",
+      "color": "Белый",
+      "image_url": "Porsche/Porsche 718 Cayman GT4 RS 982 1.webp",
+      "description": "Трековый вариант Cayman с готовой галереей изображений для страницы деталей.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1003,
+    "fields": {
+      "category": 101,
+      "brand": "Porsche",
+      "model": "911 Dakar 992",
+      "year": 2023,
+      "price": "289000.00",
+      "mileage_km": 1700,
+      "fuel_type": "Бензин",
+      "transmission": "Робот",
+      "color": "Зелёный",
+      "image_url": "Porsche/Porsche 911 Dakar 992 1.webp",
+      "description": "Редкая дорожная версия 911 Dakar с внедорожным характером и полной галереей.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1004,
+    "fields": {
+      "category": 102,
+      "brand": "Tesla",
+      "model": "Model 3 I поколение рестайлинг",
+      "year": 2024,
+      "price": "48900.00",
+      "mileage_km": 9800,
+      "fuel_type": "Электро",
+      "transmission": "Автомат",
+      "color": "Синий",
+      "image_url": "Tesla/Tesla Model 3 I поколение рестайлинг 1.webp",
+      "description": "Обновлённая Model 3 с четырьмя изображениями в галерее.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1005,
+    "fields": {
+      "category": 102,
+      "brand": "Tesla",
+      "model": "Cybertruck I поколение",
+      "year": 2024,
+      "price": "99900.00",
+      "mileage_km": 400,
+      "fuel_type": "Электро",
+      "transmission": "Автомат",
+      "color": "Стальной",
+      "image_url": "Tesla/Tesla Cybertruck I поколение 1.webp",
+      "description": "Демо-кар для проверки карточки товара и витрины новинок.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "catalog.car",
+    "pk": 1006,
+    "fields": {
+      "category": 103,
+      "brand": "Volkswagen",
+      "model": "Golf GTI 5-дв. VIII поколение",
+      "year": 2023,
+      "price": "38900.00",
+      "mileage_km": 15200,
+      "fuel_type": "Бензин",
+      "transmission": "Автомат",
+      "color": "Красный",
+      "image_url": "Volkswagen/Volkswagen Golf GTI 5-дв. VIII поколение 1.webp",
+      "description": "Горячий хэтчбек для демонстрации каталога автомобилей с полной фотогалереей.",
+      "is_active": true
+    }
+  }
+]
