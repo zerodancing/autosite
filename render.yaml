@@ -22,6 +22,8 @@ services:
         sync: false
       - key: DJANGO_DB_CONN_MAX_AGE
         value: "600"
+      - key: DJANGO_LOAD_DEMO_FIXTURE
+        value: "0"
       - key: DJANGO_SECURE_SSL_REDIRECT
         value: "1"
       - key: DJANGO_SECURE_HSTS_SECONDS
