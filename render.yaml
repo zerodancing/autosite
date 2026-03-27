@@ -30,6 +30,12 @@ services:
         value: "1"
       - key: DJANGO_SECURE_HSTS_PRELOAD
         value: "0"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: AWS_STORAGE_BUCKET_NAME
         sync: false
       - key: AWS_S3_REGION_NAME

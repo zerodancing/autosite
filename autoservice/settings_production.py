@@ -68,8 +68,37 @@ if white_noise_middleware not in MIDDLEWARE:
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+cloudinary_cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
+cloudinary_api_key = os.environ.get("CLOUDINARY_API_KEY", "").strip()
+cloudinary_api_secret = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
+use_cloudinary_media = all(
+    [cloudinary_cloud_name, cloudinary_api_key, cloudinary_api_secret]
+)
+
 STORAGES = {
-    "default": {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+if use_cloudinary_media:
+    import cloudinary
+
+    cloudinary.config(
+        cloud_name=cloudinary_cloud_name,
+        api_key=cloudinary_api_key,
+        api_secret=cloudinary_api_secret,
+        secure=True,
+    )
+    STORAGES["default"] = {
+        "BACKEND": "autoservice.storage_backends.CloudinaryMediaStorage",
+    }
+    MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "").strip()
+    if not MEDIA_URL:
+        MEDIA_URL = f"https://res.cloudinary.com/{cloudinary_cloud_name}/image/upload/"
+    MEDIA_URL = MEDIA_URL.rstrip("/") + "/"
+else:
+    STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "access_key": os.environ.get("AWS_ACCESS_KEY_ID", "").strip(),
@@ -85,37 +114,34 @@ STORAGES = {
                 "CacheControl": "max-age=86400",
             },
         },
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+    }
 
-required_storage_values = {
-    "AWS_STORAGE_BUCKET_NAME": STORAGES["default"]["OPTIONS"]["bucket_name"],
-    "AWS_S3_ENDPOINT_URL": STORAGES["default"]["OPTIONS"]["endpoint_url"],
-    "AWS_ACCESS_KEY_ID": STORAGES["default"]["OPTIONS"]["access_key"],
-    "AWS_SECRET_ACCESS_KEY": STORAGES["default"]["OPTIONS"]["secret_key"],
-}
-missing_storage_values = [
-    name for name, value in required_storage_values.items() if not value
-]
-if missing_storage_values:
-    raise ImproperlyConfigured(
-        "Production media storage is not configured. Missing: "
-        + ", ".join(sorted(missing_storage_values))
-    )
+    required_storage_values = {
+        "AWS_STORAGE_BUCKET_NAME": STORAGES["default"]["OPTIONS"]["bucket_name"],
+        "AWS_S3_ENDPOINT_URL": STORAGES["default"]["OPTIONS"]["endpoint_url"],
+        "AWS_ACCESS_KEY_ID": STORAGES["default"]["OPTIONS"]["access_key"],
+        "AWS_SECRET_ACCESS_KEY": STORAGES["default"]["OPTIONS"]["secret_key"],
+    }
+    missing_storage_values = [
+        name for name, value in required_storage_values.items() if not value
+    ]
+    if missing_storage_values:
+        raise ImproperlyConfigured(
+            "Production media storage is not configured. "
+            "Set Cloudinary credentials or S3-compatible storage variables. Missing: "
+            + ", ".join(sorted(missing_storage_values))
+        )
 
-MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "").strip()
-custom_media_domain = STORAGES["default"]["OPTIONS"]["custom_domain"]
-if not MEDIA_URL and custom_media_domain:
-    MEDIA_URL = f"https://{custom_media_domain.rstrip('/')}/"
-if MEDIA_URL:
-    MEDIA_URL = MEDIA_URL.rstrip("/") + "/"
-else:
-    raise ImproperlyConfigured(
-        "Set DJANGO_MEDIA_URL or AWS_S3_CUSTOM_DOMAIN for public media URLs."
-    )
+    MEDIA_URL = os.environ.get("DJANGO_MEDIA_URL", "").strip()
+    custom_media_domain = STORAGES["default"]["OPTIONS"]["custom_domain"]
+    if not MEDIA_URL and custom_media_domain:
+        MEDIA_URL = f"https://{custom_media_domain.rstrip('/')}/"
+    if MEDIA_URL:
+        MEDIA_URL = MEDIA_URL.rstrip("/") + "/"
+    else:
+        raise ImproperlyConfigured(
+            "Set DJANGO_MEDIA_URL or AWS_S3_CUSTOM_DOMAIN for public media URLs."
+        )
 
 allowed_hosts = list(ALLOWED_HOSTS)
 for value in _csv_env("DJANGO_ALLOWED_HOSTS"):

@@ -6,7 +6,7 @@
 - `WhiteNoise` для статики
 - `gunicorn` как WSGI-сервер
 - `collectstatic` и `check --deploy` в `build.sh`
-- внешнее S3-совместимое хранилище для медиа через `django-storages`
+- внешнее хранилище для медиа: S3-совместимое через `django-storages` или Cloudinary
 - команда `sync_media_to_storage` для загрузки текущих локальных изображений
 
 ## Быстрый маршрут на 4 часа
@@ -14,7 +14,9 @@
 1. Залить код в GitHub.
 2. Создать PostgreSQL в Render.
 3. Создать Web Service в Render из GitHub-репозитория.
-4. Создать хранилище медиа, лучше всего Cloudflare R2.
+4. Создать хранилище медиа:
+   - быстрый бесплатный вариант для тестов: Cloudinary
+   - или S3-совместимое хранилище, например Cloudflare R2
 5. Прописать переменные окружения.
 6. Один раз выгрузить локальные картинки в внешний storage.
 7. Проверить главную страницу, каталог, карточку авто, `/admin/`.
@@ -84,6 +86,9 @@ AWS_S3_CUSTOM_DOMAIN=<public-media-domain>
 DJANGO_MEDIA_URL=https://<public-media-domain>/
 AWS_ACCESS_KEY_ID=<access-key-id>
 AWS_SECRET_ACCESS_KEY=<secret-access-key>
+CLOUDINARY_CLOUD_NAME=<optional-cloudinary-cloud-name>
+CLOUDINARY_API_KEY=<optional-cloudinary-api-key>
+CLOUDINARY_API_SECRET=<optional-cloudinary-api-secret>
 ```
 
 Примеры:
@@ -103,13 +108,25 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 В production медиа должны храниться не на Render и не в GitHub, а во внешнем объектном хранилище.
 
-Самый быстрый вариант:
+Самый быстрый бесплатный вариант для тестов:
+
+- Cloudinary
+
+Для Cloudinary нужны:
+
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+Если эти переменные заданы, проект автоматически использует Cloudinary для медиа.
+
+Другие варианты:
 
 - Cloudflare R2
 - Backblaze B2 S3
 - любой S3-совместимый storage
 
-Для быстрого запуска подойдёт Cloudflare R2:
+Если используете S3-совместимое хранилище, например Cloudflare R2:
 
 1. Создайте bucket, например `autosite-media`.
 2. Включите публичную раздачу.
@@ -120,7 +137,7 @@ python -c "from django.core.management.utils import get_random_secret_key; print
    - публичный URL или отдельный поддомен для медиа
 4. Пропишите `DJANGO_MEDIA_URL`.
 
-После этого текущие локальные картинки нужно один раз отправить в bucket:
+После настройки внешнего media storage текущие локальные картинки нужно один раз выгрузить:
 
 ```bash
 python manage.py sync_media_to_storage --settings autoservice.settings_production
