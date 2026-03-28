@@ -134,7 +134,7 @@ LANGUAGES = [
 ]
 LOCALE_PATHS = [BASE_DIR / 'locale']
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = (os.environ.get("DJANGO_TIME_ZONE", "Europe/Moscow") or "Europe/Moscow").strip()
 
 USE_I18N = True
 
