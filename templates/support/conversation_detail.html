@@ -107,7 +107,17 @@
 
                   {% if item.voice_message %}
                     <div class="{% if item.text or item.image %}mt-3{% endif %}">
-                      <audio controls preload="none" class="w-full max-w-xs" src="{{ item.voice_message_url }}"></audio>
+                      <audio controls preload="none" playsinline class="w-full max-w-xs">
+                        {% if item.voice_message_browser_url and item.voice_message_browser_url != item.voice_message_url %}
+                          <source src="{{ item.voice_message_browser_url }}" type="audio/mpeg">
+                        {% endif %}
+                        <source src="{{ item.voice_message_url }}" type="{{ item.voice_message_mime_type }}">
+                      </audio>
+                      <div class="mt-2 text-xs {% if item.sender_id == user.id %}text-slate-300{% else %}text-slate-500{% endif %}">
+                        <a href="{{ item.voice_message_url }}" target="_blank" rel="noopener" class="underline decoration-dotted underline-offset-4">
+                          Открыть аудиофайл отдельно
+                        </a>
+                      </div>
                     </div>
                   {% endif %}
 
@@ -143,9 +153,10 @@
             </div>
 
             <input id="image-input" type="file" accept="image/*" class="hidden">
-            <input id="voice-input" type="file" accept="audio/*,.webm,.ogg,.oga,.opus,.m4a,.aac,.wav,.mp3" class="hidden">
+            <input id="voice-input" type="file" accept="audio/*,.webm,.ogg,.oga,.opus,.m4a,.aac,.wav,.mp3,.mp4" class="hidden">
 
             <div id="attachment-preview" class="hidden rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4"></div>
+            <div id="recording-hint" class="hidden text-xs text-slate-500"></div>
 
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div class="flex flex-wrap items-center gap-2">
@@ -243,6 +254,7 @@
     const imageInput = document.getElementById('image-input');
     const voiceInput = document.getElementById('voice-input');
     const attachmentPreview = document.getElementById('attachment-preview');
+    const recordingHint = document.getElementById('recording-hint');
     const pickImageButton = document.getElementById('pick-image-button');
     const pickVoiceFileButton = document.getElementById('pick-voice-file-button');
     const recordVoiceButton = document.getElementById('record-voice-button');
@@ -261,11 +273,13 @@
     let pollTimer = null;
     let isSending = false;
     let isPolling = false;
-    let pendingVoiceFile = null;
+    let pendingVoiceAttachment = null;
     let previewObjectUrls = [];
     let mediaRecorder = null;
     let recordingStream = null;
     let recordedChunks = [];
+    let recordingStartedAt = null;
+    let recordingTimer = null;
 
     function setError(message) {
       if (!message) {
@@ -289,10 +303,46 @@
     }
 
     function selectedVoiceFile() {
-      if (pendingVoiceFile) {
-        return pendingVoiceFile;
+      if (pendingVoiceAttachment) {
+        return pendingVoiceAttachment.blob;
       }
       return voiceInput.files && voiceInput.files[0] ? voiceInput.files[0] : null;
+    }
+
+    function selectedVoiceFileName() {
+      const voiceFile = selectedVoiceFile();
+      return voiceFile ? (voiceFile.name || 'voice-message') : '';
+    }
+
+    function clearRecordingTimer() {
+      if (recordingTimer) {
+        window.clearInterval(recordingTimer);
+      }
+      recordingTimer = null;
+      recordingStartedAt = null;
+    }
+
+    function showRecordingHint(message) {
+      if (!message) {
+        recordingHint.textContent = '';
+        recordingHint.classList.add('hidden');
+        return;
+      }
+
+      recordingHint.textContent = message;
+      recordingHint.classList.remove('hidden');
+    }
+
+    function startRecordingTimer() {
+      clearRecordingTimer();
+      recordingStartedAt = Date.now();
+      showRecordingHint('Идёт запись голосового сообщения: 00:00');
+      recordingTimer = window.setInterval(function () {
+        const elapsedSeconds = Math.max(Math.floor((Date.now() - recordingStartedAt) / 1000), 0);
+        const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        const seconds = String(elapsedSeconds % 60).padStart(2, '0');
+        showRecordingHint('Идёт запись голосового сообщения: ' + minutes + ':' + seconds);
+      }, 1000);
     }
 
     function renderPendingAttachments() {
@@ -332,8 +382,8 @@
           '<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white">VO</div>' +
           '<div class="min-w-0 flex-1">' +
           '<div class="text-sm font-semibold text-slate-900">Голосовое сообщение</div>' +
-          '<div class="mt-1 break-all text-xs text-slate-500">' + voiceFile.name + '</div>' +
-          '<audio controls preload="metadata" class="mt-3 w-full" src="' + voiceUrl + '"></audio>' +
+          '<div class="mt-1 break-all text-xs text-slate-500">' + selectedVoiceFileName() + '</div>' +
+          '<audio controls preload="metadata" playsinline class="mt-3 w-full" src="' + voiceUrl + '"></audio>' +
           '</div>';
         attachmentPreview.appendChild(voiceCard);
       }
@@ -343,10 +393,11 @@
       revokePreviewObjectUrls();
       imageInput.value = '';
       voiceInput.value = '';
-      pendingVoiceFile = null;
+      pendingVoiceAttachment = null;
       attachmentPreview.innerHTML = '';
       attachmentPreview.classList.add('hidden');
       setRecordButtonState(false);
+      showRecordingHint('');
     }
 
     function setRecordButtonState(isRecording) {
@@ -387,7 +438,15 @@
         recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         let options = undefined;
-        const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
+        const preferredTypes = [
+          'audio/mp4;codecs=mp4a.40.2',
+          'audio/mp4',
+          'audio/x-m4a',
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/ogg'
+        ];
         for (const mimeType of preferredTypes) {
           if (window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(mimeType)) {
             options = { mimeType: mimeType };
@@ -404,30 +463,54 @@
 
         mediaRecorder.addEventListener('stop', function () {
           stopRecordingStream();
+          clearRecordingTimer();
           setRecordButtonState(false);
           if (!recordedChunks.length) {
+            showRecordingHint('Запись не сохранилась. Попробуйте ещё раз.');
             return;
           }
 
           const mimeType = mediaRecorder.mimeType || 'audio/webm';
-          const extension = mimeType.includes('ogg') ? 'ogg' : 'webm';
-          pendingVoiceFile = new File(
-            recordedChunks,
-            'voice-message-' + Date.now() + '.' + extension,
-            { type: mimeType }
-          );
+          let extension = 'webm';
+          if (mimeType.includes('ogg')) {
+            extension = 'ogg';
+          } else if (mimeType.includes('mp4') || mimeType.includes('m4a') || mimeType.includes('aac')) {
+            extension = 'm4a';
+          } else if (mimeType.includes('mpeg')) {
+            extension = 'mp3';
+          }
+
+          const fileName = 'voice-message-' + Date.now() + '.' + extension;
+          const voiceBlob = new Blob(recordedChunks, { type: mimeType });
+          let voiceUpload = voiceBlob;
+          try {
+            voiceUpload = new File([voiceBlob], fileName, { type: mimeType });
+          } catch (error) {
+            voiceUpload.name = fileName;
+            voiceUpload.lastModified = Date.now();
+          }
+
+          pendingVoiceAttachment = {
+            blob: voiceUpload,
+            name: fileName,
+            type: mimeType
+          };
           voiceInput.value = '';
           renderPendingAttachments();
           pollStatus.textContent = 'Голосовое сообщение готово к отправке';
+          showRecordingHint('Голосовое сообщение записано и готово к отправке.');
         });
 
         mediaRecorder.start();
         setRecordButtonState(true);
         pollStatus.textContent = 'Идёт запись голосового сообщения';
+        startRecordingTimer();
       } catch (error) {
         stopRecordingStream();
+        clearRecordingTimer();
         setRecordButtonState(false);
         setError('Не удалось получить доступ к микрофону. Проверьте разрешения браузера.');
+        showRecordingHint('');
       }
     }
 
@@ -519,9 +602,30 @@
         const audio = document.createElement('audio');
         audio.controls = true;
         audio.preload = 'none';
-        audio.src = message.voice_url;
+        audio.playsInline = true;
         audio.className = 'w-full max-w-xs';
+
+        if (message.voice_browser_url && message.voice_browser_url !== message.voice_url) {
+          const browserSource = document.createElement('source');
+          browserSource.src = message.voice_browser_url;
+          browserSource.type = 'audio/mpeg';
+          audio.appendChild(browserSource);
+        }
+
+        const source = document.createElement('source');
+        source.src = message.voice_url;
+        source.type = message.voice_mime_type || 'audio/mpeg';
+        audio.appendChild(source);
         voiceWrapper.appendChild(audio);
+
+        const fallbackLink = document.createElement('a');
+        fallbackLink.href = message.voice_url;
+        fallbackLink.target = '_blank';
+        fallbackLink.rel = 'noopener';
+        fallbackLink.className = 'mt-2 block text-xs text-slate-500 underline decoration-dotted underline-offset-4';
+        fallbackLink.textContent = 'Открыть аудиофайл отдельно';
+        voiceWrapper.appendChild(fallbackLink);
+
         bubble.appendChild(voiceWrapper);
       }
 
@@ -641,7 +745,7 @@
           payload.append('image_upload', imageFile);
         }
         if (voiceFile) {
-          payload.append('voice_upload', voiceFile);
+          payload.append('voice_upload', voiceFile, voiceFile.name || ('voice-message-' + Date.now() + '.webm'));
         }
 
         const response = await fetch(sendUrl, {
@@ -695,7 +799,7 @@
     });
 
     pickVoiceFileButton.addEventListener('click', function () {
-      pendingVoiceFile = null;
+      pendingVoiceAttachment = null;
       voiceInput.click();
     });
 
@@ -714,15 +818,17 @@
     });
 
     voiceInput.addEventListener('change', function () {
-      pendingVoiceFile = null;
+      pendingVoiceAttachment = null;
       renderPendingAttachments();
       setError('');
+      showRecordingHint('');
     });
 
     if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       recordVoiceButton.disabled = true;
       recordVoiceButton.className = 'inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-400';
       recordVoiceButton.textContent = 'Запись недоступна';
+      showRecordingHint('В этом браузере запись с микрофона недоступна. Можно загрузить готовый аудиофайл.');
     }
 
     scrollChatToBottom(true);

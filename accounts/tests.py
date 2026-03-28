@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from accounts.forms import SignUpForm
 from accounts.models import CustomUser
 
 
@@ -123,3 +124,11 @@ class ContactNormalizationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Укажите номер телефона")
         self.assertFalse(CustomUser.objects.filter(username="fresh-user").exists())
+
+    def test_signup_form_applies_consistent_widget_classes_to_all_profile_fields(self):
+        form = SignUpForm()
+
+        for field_name in ("full_name", "phone", "password1", "password2"):
+            css_class = form.fields[field_name].widget.attrs.get("class", "")
+            self.assertIn("border-slate-300/90", css_class)
+            self.assertIn("focus:ring-4", css_class)

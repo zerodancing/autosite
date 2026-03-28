@@ -4,7 +4,7 @@ from django import forms
 
 
 IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "avif"}
-VOICE_EXTENSIONS = {"mp3", "wav", "ogg", "oga", "opus", "m4a", "aac", "flac", "webm"}
+VOICE_EXTENSIONS = {"mp3", "wav", "ogg", "oga", "opus", "m4a", "aac", "flac", "webm", "mp4"}
 MAX_IMAGE_UPLOAD_BYTES = 8 * 1024 * 1024
 MAX_VOICE_UPLOAD_BYTES = 12 * 1024 * 1024
 
@@ -68,7 +68,7 @@ class SupportMessageBaseForm(forms.Form):
         required=False,
         widget=forms.ClearableFileInput(
             attrs={
-                "accept": "audio/*,.webm,.ogg,.oga,.opus,.m4a,.aac,.wav,.mp3",
+                "accept": "audio/*,.webm,.ogg,.oga,.opus,.m4a,.aac,.wav,.mp3,.mp4",
                 "class": "block w-full text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:font-medium file:text-slate-900 hover:file:bg-slate-300",
             }
         ),

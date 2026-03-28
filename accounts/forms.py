@@ -34,6 +34,38 @@ class SignUpForm(UserCreationForm):
             "password2": forms.PasswordInput(attrs={**COMMON_INPUT_ATTRS, "autocomplete": "new-password", "placeholder": "Повторите пароль"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["full_name"].widget.attrs.update(
+            {
+                **COMMON_INPUT_ATTRS,
+                "autocomplete": "name",
+                "placeholder": "Имя и фамилия",
+            }
+        )
+        self.fields["phone"].widget.attrs.update(
+            {
+                **COMMON_INPUT_ATTRS,
+                "autocomplete": "tel",
+                "inputmode": "tel",
+                "placeholder": "+7 999 123-45-67",
+            }
+        )
+        self.fields["password1"].widget.attrs.update(
+            {
+                **COMMON_INPUT_ATTRS,
+                "autocomplete": "new-password",
+                "placeholder": "Пароль",
+            }
+        )
+        self.fields["password2"].widget.attrs.update(
+            {
+                **COMMON_INPUT_ATTRS,
+                "autocomplete": "new-password",
+                "placeholder": "Подтверждение пароля",
+            }
+        )
+
     def clean_email(self):
         return normalize_email(self.cleaned_data.get("email"))
 

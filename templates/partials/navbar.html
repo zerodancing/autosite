@@ -1,24 +1,6 @@
 {% load i18n %}
 <header class="z-40 px-3 pt-3 sm:px-5 lg:sticky lg:top-0 lg:px-8">
   <div class="mx-auto max-w-[1440px]">
-    <div class="mb-3 hidden items-center justify-between rounded-full bg-slate-950 px-5 py-2 text-xs font-medium text-slate-200 lg:flex">
-      <div class="flex items-center gap-4">
-        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1">
-          <span class="h-2 w-2 rounded-full bg-lime-300"></span>
-          Онлайн-консультация и подбор автомобиля
-        </span>
-        <span class="text-slate-400">Ежедневно 09:00-21:00</span>
-      </div>
-      <div class="flex items-center gap-4 text-slate-300">
-        <a class="transition hover:text-white" href="{% url 'catalog:services_list' %}">Диагностика</a>
-        <a class="transition hover:text-white" href="{% url 'catalog:cars_list' %}">Каталог авто</a>
-        <a class="transition hover:text-white" href="{% url 'support:support_home' %}">Поддержка</a>
-        {% if user.is_staff %}
-          <a class="transition hover:text-white" href="/admin/">Админ-панель</a>
-        {% endif %}
-      </div>
-    </div>
-
     <div class="glass-panel rounded-[1.8rem] px-3 py-3.5 sm:rounded-[2rem] sm:px-6 sm:py-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex items-center justify-between gap-3">
@@ -35,13 +17,6 @@
             </div>
           </a>
 
-          <a
-            href="{% url 'support:support_home' %}"
-            class="inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-950 px-3 py-2 text-xs font-semibold text-white xl:hidden"
-          >
-            <span class="h-2 w-2 rounded-full bg-lime-300"></span>
-            Поддержка
-          </a>
         </div>
 
         <nav class="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 text-sm font-semibold text-slate-700 xl:mx-0 xl:flex-wrap xl:overflow-visible xl:px-0 xl:pb-0">

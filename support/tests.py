@@ -192,6 +192,29 @@ class SupportApiTests(TestCase):
         self.assertEqual(payload["message"]["preview_text"], "Голосовое сообщение")
         self.assertTrue(created_message.voice_message.name)
 
+    def test_send_message_accepts_mp4_voice_attachment(self):
+        self.client.force_login(self.user)
+
+        with tempfile.TemporaryDirectory() as temp_media:
+            uploaded_voice = SimpleUploadedFile(
+                "voice-note.mp4",
+                b"fake-mp4-audio-content",
+                content_type="audio/mp4",
+            )
+
+            with override_settings(MEDIA_ROOT=temp_media, MEDIA_URL="/cars/"):
+                response = self.client.post(
+                    reverse("support:api_send_message", args=[self.conversation.id]),
+                    data={"message": "", "voice_upload": uploaded_voice},
+                )
+
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["message"]["has_voice"])
+        self.assertEqual(payload["message"]["voice_mime_type"], "audio/mp4")
+
     @override_settings(
         LIGHTWEIGHT_SECURITY_LIMITS={
             "support_send_per_user": 1,

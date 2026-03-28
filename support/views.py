@@ -111,6 +111,8 @@ def _serialize_message(message: Message, user):
         "image_url": message.image_url,
         "has_voice": bool(message.voice_message),
         "voice_url": message.voice_message_url,
+        "voice_browser_url": message.voice_message_browser_url,
+        "voice_mime_type": message.voice_message_mime_type,
     }
 
 
