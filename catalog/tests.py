@@ -1,11 +1,13 @@
 import tempfile
 from pathlib import Path
 
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from catalog.forms import save_car_gallery
-from catalog.models import Car, CarCategory, CarImage
+from catalog.models import Car, CarCategory, CarImage, SiteMetric
 from catalog.templatetags.car_image_filters import car_image_urls
 
 
@@ -45,3 +47,32 @@ class CarImageUploadTests(TestCase):
 
                 self.assertEqual(CarImage.objects.filter(car=car).count(), 2)
                 self.assertEqual(len(car.gallery_image_urls), 2)
+
+
+class SiteVisitTrackingTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_anonymous_visit_is_counted_once_per_session(self):
+        self.client.get(
+            reverse("catalog:home"),
+            HTTP_ACCEPT="text/html",
+            HTTP_USER_AGENT="Mozilla/5.0",
+        )
+        self.client.get(
+            reverse("catalog:cars_list"),
+            HTTP_ACCEPT="text/html",
+            HTTP_USER_AGENT="Mozilla/5.0",
+        )
+
+        metric = SiteMetric.objects.get(pk=1)
+        self.assertEqual(metric.total_visits, 1)
+
+    def test_bot_user_agent_is_not_counted(self):
+        self.client.get(
+            reverse("catalog:home"),
+            HTTP_ACCEPT="text/html",
+            HTTP_USER_AGENT="Googlebot/2.1",
+        )
+
+        self.assertFalse(SiteMetric.objects.exists())

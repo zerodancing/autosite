@@ -12,6 +12,7 @@ from .models import (
     CarCharacteristicValue,
     Service,
     ServiceCategory,
+    SiteMetric,
 )
 from .utils import resolve_uploaded_media_url
 
@@ -156,3 +157,15 @@ class CarCharacteristicAdmin(admin.ModelAdmin):
     list_filter = ("group", "value_type")
     search_fields = ("name", "slug", "group__name")
     prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(SiteMetric)
+class SiteMetricAdmin(admin.ModelAdmin):
+    list_display = ("id", "total_visits", "updated_at")
+    readonly_fields = ("total_visits", "updated_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

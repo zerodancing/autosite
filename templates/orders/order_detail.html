@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load site_formatting %}
 
 {% block title %}{% trans "Детали заказа" %} №{{ order.id }}{% endblock %}
 
@@ -28,7 +29,7 @@
             {{ order.status }}
           </div>
           <div class="mt-3 text-xs text-slate-500">{% trans "Сумма" %}</div>
-          <div class="mt-1 text-xl font-bold">{{ order.total_price }} ₽</div>
+          <div class="mt-1 text-xl font-bold">{{ order.total_price|spaced_number }} ₽</div>
         </div>
       </div>
 

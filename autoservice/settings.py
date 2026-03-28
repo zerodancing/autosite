@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'autoservice.middleware.SiteVisitTrackingMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -77,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'catalog.context_processors.site_metrics',
             ],
         },
     },
@@ -170,6 +172,8 @@ LIGHTWEIGHT_SECURITY_LIMITS = {
     "support_conversation_create_per_ip": 10,
     "support_conversation_create_window_seconds": 10 * 60,
 }
+
+SITE_VISIT_INTERVAL_SECONDS = int(os.environ.get("SITE_VISIT_INTERVAL_SECONDS", str(12 * 60 * 60)))
 
 
 # Static files (CSS, JavaScript, Images)

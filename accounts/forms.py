@@ -3,10 +3,11 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils.translation import gettext_lazy as _
 
 from .models import CustomUser
+from .normalization import normalize_email, normalize_phone
 
 
 COMMON_INPUT_ATTRS = {
-    "class": "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 outline-none focus:border-slate-400",
+    "class": "mt-1 w-full rounded-[1rem] border border-slate-300/90 bg-white/90 px-4 py-3 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] outline-none transition focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/10",
 }
 
 
@@ -21,15 +22,32 @@ class SignUpForm(UserCreationForm):
             "username": forms.TextInput(attrs={**COMMON_INPUT_ATTRS, "autocomplete": "username", "placeholder": "Логин"}),
             "email": forms.EmailInput(attrs={**COMMON_INPUT_ATTRS, "autocomplete": "email", "placeholder": "Email"}),
             "full_name": forms.TextInput(attrs=COMMON_INPUT_ATTRS | {"autocomplete": "name", "placeholder": "Имя и фамилия"}),
-            "phone": forms.TextInput(attrs=COMMON_INPUT_ATTRS | {"autocomplete": "tel", "placeholder": "Телефон"}),
+            "phone": forms.TextInput(
+                attrs=COMMON_INPUT_ATTRS
+                | {
+                    "autocomplete": "tel",
+                    "inputmode": "tel",
+                    "placeholder": "+7 999 123-45-67",
+                }
+            ),
             "password1": forms.PasswordInput(attrs={**COMMON_INPUT_ATTRS, "autocomplete": "new-password", "placeholder": "Пароль"}),
             "password2": forms.PasswordInput(attrs={**COMMON_INPUT_ATTRS, "autocomplete": "new-password", "placeholder": "Повторите пароль"}),
         }
+
+    def clean_email(self):
+        return normalize_email(self.cleaned_data.get("email"))
+
+    def clean_phone(self):
+        return normalize_phone(self.cleaned_data.get("phone"), raise_on_error=True)
+
+    def clean_full_name(self):
+        return (self.cleaned_data.get("full_name") or "").strip()
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.full_name = self.cleaned_data.get("full_name", "")
         user.phone = self.cleaned_data.get("phone", "")
+        user.email = self.cleaned_data.get("email", "")
         if commit:
             user.save()
         return user
@@ -59,3 +77,8 @@ class LoginForm(AuthenticationForm):
             }
         )
 
+    def clean_username(self):
+        username = (self.cleaned_data.get("username") or "").strip()
+        if "@" in username:
+            return normalize_email(username)
+        return username

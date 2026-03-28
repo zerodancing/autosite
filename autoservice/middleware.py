@@ -3,6 +3,7 @@ import hashlib
 from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.utils import translation
 
 
@@ -20,6 +21,66 @@ class AdminRussianLocaleMiddleware:
             translation.activate("ru")
             request.LANGUAGE_CODE = "ru"
         return self.get_response(request)
+
+
+class SiteVisitTrackingMiddleware:
+    """
+    Считает визиты сайта мягко: только для успешных HTML-страниц,
+    не чаще одного раза за интервал на одну браузерную сессию.
+    """
+
+    session_key = "site_visit_last_tracked_at"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.interval_seconds = int(getattr(settings, "SITE_VISIT_INTERVAL_SECONDS", 12 * 60 * 60))
+
+    def __call__(self, request):
+        should_track_request = self._should_track_request(request)
+        response = self.get_response(request)
+
+        if should_track_request and self._should_track_response(response) and self._is_new_visit(request):
+            from catalog.models import SiteMetric
+
+            SiteMetric.increment_total_visits()
+            request.session[self.session_key] = int(timezone.now().timestamp())
+            request.session.modified = True
+
+        return response
+
+    def _should_track_request(self, request) -> bool:
+        if request.method.upper() != "GET":
+            return False
+
+        path = (request.path_info or "").lower()
+        if path.startswith(("/admin/", "/static/", "/media/", "/cars/", "/support/api/")):
+            return False
+        if path in {"/favicon.ico", "/robots.txt"}:
+            return False
+
+        accept = (request.META.get("HTTP_ACCEPT") or "").lower()
+        if "text/html" not in accept and "*/*" not in accept:
+            return False
+
+        user_agent = (request.META.get("HTTP_USER_AGENT") or "").lower()
+        blocked_fragments = ("bot", "spider", "crawler", "preview", "monitor", "uptime")
+        return not any(fragment in user_agent for fragment in blocked_fragments)
+
+    def _should_track_response(self, response) -> bool:
+        if response.status_code != 200:
+            return False
+        return "text/html" in (response.headers.get("Content-Type") or "").lower()
+
+    def _is_new_visit(self, request) -> bool:
+        last_tracked_at = request.session.get(self.session_key)
+        if last_tracked_at is None:
+            return True
+
+        try:
+            elapsed = int(timezone.now().timestamp()) - int(last_tracked_at)
+        except (TypeError, ValueError):
+            return True
+        return elapsed >= self.interval_seconds
 
 
 class LightweightSecurityMiddleware:

@@ -93,3 +93,33 @@ class SetLanguageViewTests(TestCase):
             response.cookies[settings.LANGUAGE_COOKIE_NAME].value,
             settings.LANGUAGE_CODE,
         )
+
+
+class ContactNormalizationTests(TestCase):
+    def test_create_user_normalizes_email_and_phone(self):
+        user = CustomUser.objects.create_user(
+            username="normalized",
+            email="  USER@Example.COM ",
+            phone="8 (999) 123-45-67",
+            password="testpass123",
+        )
+
+        self.assertEqual(user.email, "user@example.com")
+        self.assertEqual(user.phone, "+79991234567")
+
+    def test_signup_rejects_invalid_phone(self):
+        response = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "username": "fresh-user",
+                "email": "Fresh@Example.com",
+                "full_name": "  Ivan Ivanov  ",
+                "phone": "12345",
+                "password1": "StrongPass12345",
+                "password2": "StrongPass12345",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Укажите номер телефона")
+        self.assertFalse(CustomUser.objects.filter(username="fresh-user").exists())

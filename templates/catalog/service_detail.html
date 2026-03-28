@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load site_formatting %}
 
 {% block title %}{{ service.title }}{% endblock %}
 
@@ -9,12 +10,12 @@
         <div>
           <span class="editorial-kicker">Услуга</span>
           <div class="mt-4 text-sm font-bold uppercase tracking-[0.16em] text-slate-400">{{ service.category.name }}</div>
-          <h1 class="headline-balance mt-3 max-w-4xl text-4xl font-bold text-slate-950 sm:text-5xl">
+          <h1 class="headline-balance mt-3 max-w-4xl text-3xl font-bold text-slate-950 sm:text-5xl">
             {{ service.title }}
           </h1>
         </div>
         <div class="rounded-full bg-slate-950 px-4 py-2 text-sm font-extrabold text-white">
-          от {{ service.price_from }} ₽
+          от {{ service.price_from|spaced_number }} ₽
         </div>
       </div>
 
@@ -29,7 +30,7 @@
         </div>
         <div class="rounded-[1.7rem] border border-slate-200 bg-white/[0.88] p-5">
           <div class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Цена от</div>
-          <div class="mt-3 text-2xl font-bold text-slate-950">{{ service.price_from }} ₽</div>
+          <div class="mt-3 text-2xl font-bold text-slate-950">{{ service.price_from|spaced_number }} ₽</div>
         </div>
         <div class="rounded-[1.7rem] border border-slate-200 bg-white/[0.88] p-5">
           <div class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Статус</div>
@@ -52,7 +53,7 @@
       <div class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Действия</div>
       <div class="mt-4 rounded-[2rem] bg-slate-950 p-5 text-white shadow-plate">
         <div class="text-xs uppercase tracking-[0.14em] text-slate-400">Стоимость</div>
-        <div class="mt-2 text-3xl font-bold">{{ service.price_from }} ₽</div>
+        <div class="mt-2 text-3xl font-bold">{{ service.price_from|spaced_number }} ₽</div>
         <div class="mt-2 text-sm text-slate-300">Ориентировочная цена старта по этой услуге.</div>
       </div>
 

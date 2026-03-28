@@ -1,10 +1,54 @@
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F
 from django.db.utils import OperationalError, ProgrammingError
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from .utils import resolve_uploaded_media_url
+
+
+SITE_METRIC_CACHE_KEY = "catalog:site-metric:total-visits"
+
+
+class SiteMetric(models.Model):
+    total_visits = models.PositiveBigIntegerField(default=0, verbose_name=_("Посещения сайта"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Обновлено"))
+
+    class Meta:
+        verbose_name = _("Метрика сайта")
+        verbose_name_plural = _("Метрики сайта")
+
+    def __str__(self) -> str:
+        return _("Счётчик посещений сайта")
+
+    @classmethod
+    def cached_total_visits(cls) -> int:
+        cached_value = cache.get(SITE_METRIC_CACHE_KEY)
+        if cached_value is not None:
+            return int(cached_value)
+
+        try:
+            total = cls.objects.filter(pk=1).values_list("total_visits", flat=True).first() or 0
+        except (OperationalError, ProgrammingError):
+            total = 0
+
+        cache.set(SITE_METRIC_CACHE_KEY, int(total), timeout=10 * 60)
+        return int(total)
+
+    @classmethod
+    def increment_total_visits(cls) -> int:
+        try:
+            cls.objects.get_or_create(pk=1, defaults={"total_visits": 0})
+            cls.objects.filter(pk=1).update(total_visits=F("total_visits") + 1, updated_at=timezone.now())
+            total = cls.objects.values_list("total_visits", flat=True).get(pk=1)
+        except (OperationalError, ProgrammingError):
+            return 0
+
+        cache.set(SITE_METRIC_CACHE_KEY, int(total), timeout=10 * 60)
+        return int(total)
 
 
 class ServiceCategory(models.Model):
