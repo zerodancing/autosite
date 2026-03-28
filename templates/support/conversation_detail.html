@@ -8,7 +8,7 @@
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Чат поддержки</h1>
         <p class="mt-2 text-sm text-slate-600">
-          Диалог #{{ conversation.id }}. Сообщения обновляются автоматически, а история остаётся в списке слева.
+          Диалог #{{ conversation.id }}. Сообщения обновляются автоматически, а в переписке можно обмениваться текстом, фото и голосовыми сообщениями.
         </p>
       </div>
       <a
@@ -22,7 +22,7 @@
     <div class="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
       {% include "support/includes/conversation_sidebar.html" %}
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-5 text-white">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="min-w-0">
@@ -83,11 +83,34 @@
                 class="flex {% if item.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}"
                 data-message-id="{{ item.id }}"
               >
-                <div class="{% if item.sender_id == user.id %}bg-slate-900 text-white{% else %}border border-slate-200 bg-white text-slate-900{% endif %} max-w-[88%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]">
+                <div class="{% if item.sender_id == user.id %}bg-slate-900 text-white{% else %}border border-slate-200 bg-white text-slate-900{% endif %} max-w-[90%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]">
                   {% if item.sender_id != user.id %}
                     <div class="mb-1 text-xs font-medium text-slate-500">{{ item.sender.full_name|default:item.sender.username }}</div>
                   {% endif %}
-                  <div class="whitespace-pre-wrap break-words text-sm leading-6">{{ item.text }}</div>
+
+                  {% if item.text %}
+                    <div class="whitespace-pre-wrap break-words text-sm leading-6">{{ item.text }}</div>
+                  {% endif %}
+
+                  {% if item.image %}
+                    <div class="{% if item.text %}mt-3{% endif %}">
+                      <a href="{{ item.image_url }}" target="_blank" rel="noopener" class="block overflow-hidden rounded-2xl">
+                        <img
+                          src="{{ item.image_url }}"
+                          alt="Вложенное изображение"
+                          class="max-h-80 w-full rounded-2xl object-cover"
+                          loading="lazy"
+                        >
+                      </a>
+                    </div>
+                  {% endif %}
+
+                  {% if item.voice_message %}
+                    <div class="{% if item.text or item.image %}mt-3{% endif %}">
+                      <audio controls preload="none" class="w-full max-w-xs" src="{{ item.voice_message_url }}"></audio>
+                    </div>
+                  {% endif %}
+
                   <div class="mt-2 text-[11px] {% if item.sender_id == user.id %}text-slate-300{% else %}text-slate-400{% endif %}">
                     {{ item.created_at|date:"d.m.Y H:i" }}
                   </div>
@@ -98,7 +121,7 @@
                 <div class="max-w-md rounded-[1.8rem] border border-dashed border-slate-300 bg-white/70 px-6 py-8 text-center shadow-sm">
                   <div class="text-lg font-semibold text-slate-900">Пока нет сообщений</div>
                   <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Напишите первое сообщение ниже. Диалог сразу начнёт обновляться в реальном времени.
+                    Напишите первое сообщение ниже. Можно отправить текст, фото или короткое голосовое сообщение.
                   </p>
                 </div>
               </div>
@@ -109,6 +132,7 @@
         <div class="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
           <form id="send-form" class="space-y-3">
             {% csrf_token %}
+
             <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-3">
               <textarea
                 id="message-input"
@@ -117,10 +141,48 @@
                 placeholder="Напишите сообщение. Enter отправляет, Shift+Enter переносит строку."
               ></textarea>
             </div>
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div id="send-error" class="hidden text-sm text-rose-600"></div>
-              <div class="flex items-center gap-3 sm:ml-auto">
-                <div class="text-xs text-slate-500">Лимит: 2000 символов</div>
+
+            <input id="image-input" type="file" accept="image/*" class="hidden">
+            <input id="voice-input" type="file" accept="audio/*,.webm,.ogg,.oga,.opus,.m4a,.aac,.wav,.mp3" class="hidden">
+
+            <div id="attachment-preview" class="hidden rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4"></div>
+
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  id="pick-image-button"
+                  type="button"
+                  class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  Добавить фото
+                </button>
+                <button
+                  id="pick-voice-file-button"
+                  type="button"
+                  class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+                >
+                  Загрузить аудио
+                </button>
+                <button
+                  id="record-voice-button"
+                  type="button"
+                  class="inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100"
+                >
+                  Записать голос
+                </button>
+                <button
+                  id="clear-attachments-button"
+                  type="button"
+                  class="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-50"
+                >
+                  Очистить вложения
+                </button>
+              </div>
+
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                <div class="text-xs leading-5 text-slate-500">
+                  Лимиты: текст до 2000 символов, фото до 8 МБ, голос до 12 МБ.
+                </div>
                 <button
                   id="send-button"
                   type="submit"
@@ -130,6 +192,8 @@
                 </button>
               </div>
             </div>
+
+            <div id="send-error" class="hidden text-sm text-rose-600"></div>
           </form>
         </div>
       </section>
@@ -149,6 +213,19 @@
       });
     }
 
+    function formatSidebarTimestamp(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return date.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    const POLL_INTERVAL_MS = 2500;
+    const POLL_ERROR_BACKOFF_MS = 7000;
     const chatBox = document.getElementById('chat-box');
     const messagesList = document.querySelector('[data-message-list]');
     const input = document.getElementById('message-input');
@@ -163,6 +240,14 @@
     const pollUrl = "{% url 'support:api_get_messages' conversation.id %}?after=";
     const sendUrl = "{% url 'support:api_send_message' conversation.id %}";
     const activeConversationItem = document.querySelector('[data-conversation-id="{{ conversation.id }}"]');
+    const imageInput = document.getElementById('image-input');
+    const voiceInput = document.getElementById('voice-input');
+    const attachmentPreview = document.getElementById('attachment-preview');
+    const pickImageButton = document.getElementById('pick-image-button');
+    const pickVoiceFileButton = document.getElementById('pick-voice-file-button');
+    const recordVoiceButton = document.getElementById('record-voice-button');
+    const clearAttachmentsButton = document.getElementById('clear-attachments-button');
+
     const renderedMessageIds = new Set(
       Array.from(messagesList.querySelectorAll('[data-message-id]')).map(function (node) {
         return Number(node.dataset.messageId);
@@ -170,23 +255,179 @@
         return Number.isFinite(value) && value > 0;
       })
     );
-    const initialMessageCountMatch = chatCount ? chatCount.textContent.match(/\d+/) : null;
-    const messageCountLabel = chatCount
-      ? chatCount.textContent.replace(/\d+/g, '').trim()
-      : '';
 
     let lastId = {{ last_message_id|default:0 }};
-    let knownMessageCount = Math.max(
-      Number(initialMessageCountMatch ? initialMessageCountMatch[0] : 0),
-      renderedMessageIds.size
-    );
+    let knownMessageCount = Math.max(renderedMessageIds.size, {{ conversation.message_count|default:0 }});
     let pollTimer = null;
     let isSending = false;
+    let isPolling = false;
+    let pendingVoiceFile = null;
+    let previewObjectUrls = [];
+    let mediaRecorder = null;
+    let recordingStream = null;
+    let recordedChunks = [];
 
-    function scrollChatToBottom(force) {
-      const distanceToBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
-      if (force || distanceToBottom < 100) {
-        chatBox.scrollTop = chatBox.scrollHeight;
+    function setError(message) {
+      if (!message) {
+        sendError.textContent = '';
+        sendError.classList.add('hidden');
+        return;
+      }
+      sendError.textContent = message;
+      sendError.classList.remove('hidden');
+    }
+
+    function revokePreviewObjectUrls() {
+      previewObjectUrls.forEach(function (url) {
+        URL.revokeObjectURL(url);
+      });
+      previewObjectUrls = [];
+    }
+
+    function selectedImageFile() {
+      return imageInput.files && imageInput.files[0] ? imageInput.files[0] : null;
+    }
+
+    function selectedVoiceFile() {
+      if (pendingVoiceFile) {
+        return pendingVoiceFile;
+      }
+      return voiceInput.files && voiceInput.files[0] ? voiceInput.files[0] : null;
+    }
+
+    function renderPendingAttachments() {
+      revokePreviewObjectUrls();
+      attachmentPreview.innerHTML = '';
+
+      const imageFile = selectedImageFile();
+      const voiceFile = selectedVoiceFile();
+      if (!imageFile && !voiceFile) {
+        attachmentPreview.classList.add('hidden');
+        return;
+      }
+
+      attachmentPreview.classList.remove('hidden');
+      attachmentPreview.className = 'rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4';
+
+      if (imageFile) {
+        const imageUrl = URL.createObjectURL(imageFile);
+        previewObjectUrls.push(imageUrl);
+        const imageCard = document.createElement('div');
+        imageCard.className = 'mb-3 flex items-start gap-4 rounded-2xl bg-white p-3 shadow-sm';
+        imageCard.innerHTML =
+          '<img src="' + imageUrl + '" alt="Предпросмотр фото" class="h-24 w-24 rounded-2xl object-cover">' +
+          '<div class="min-w-0">' +
+          '<div class="text-sm font-semibold text-slate-900">Фото готово к отправке</div>' +
+          '<div class="mt-1 break-all text-xs text-slate-500">' + imageFile.name + '</div>' +
+          '</div>';
+        attachmentPreview.appendChild(imageCard);
+      }
+
+      if (voiceFile) {
+        const voiceUrl = URL.createObjectURL(voiceFile);
+        previewObjectUrls.push(voiceUrl);
+        const voiceCard = document.createElement('div');
+        voiceCard.className = 'flex items-start gap-4 rounded-2xl bg-white p-3 shadow-sm';
+        voiceCard.innerHTML =
+          '<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white">VO</div>' +
+          '<div class="min-w-0 flex-1">' +
+          '<div class="text-sm font-semibold text-slate-900">Голосовое сообщение</div>' +
+          '<div class="mt-1 break-all text-xs text-slate-500">' + voiceFile.name + '</div>' +
+          '<audio controls preload="metadata" class="mt-3 w-full" src="' + voiceUrl + '"></audio>' +
+          '</div>';
+        attachmentPreview.appendChild(voiceCard);
+      }
+    }
+
+    function clearAttachments() {
+      revokePreviewObjectUrls();
+      imageInput.value = '';
+      voiceInput.value = '';
+      pendingVoiceFile = null;
+      attachmentPreview.innerHTML = '';
+      attachmentPreview.classList.add('hidden');
+      setRecordButtonState(false);
+    }
+
+    function setRecordButtonState(isRecording) {
+      if (!recordVoiceButton) return;
+      if (recordVoiceButton.disabled) return;
+      if (isRecording) {
+        recordVoiceButton.textContent = 'Остановить запись';
+        recordVoiceButton.className = 'inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-900 transition hover:bg-rose-100';
+      } else {
+        recordVoiceButton.textContent = 'Записать голос';
+        recordVoiceButton.className = 'inline-flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100';
+      }
+    }
+
+    function stopRecordingStream() {
+      if (recordingStream) {
+        recordingStream.getTracks().forEach(function (track) {
+          track.stop();
+        });
+      }
+      recordingStream = null;
+    }
+
+    async function toggleVoiceRecording() {
+      if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Браузер не поддерживает запись голоса. Можно загрузить аудиофайл вручную.');
+        return;
+      }
+
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+      }
+
+      try {
+        setError('');
+        recordedChunks = [];
+        recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        let options = undefined;
+        const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'];
+        for (const mimeType of preferredTypes) {
+          if (window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(mimeType)) {
+            options = { mimeType: mimeType };
+            break;
+          }
+        }
+
+        mediaRecorder = new MediaRecorder(recordingStream, options);
+        mediaRecorder.addEventListener('dataavailable', function (event) {
+          if (event.data && event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        });
+
+        mediaRecorder.addEventListener('stop', function () {
+          stopRecordingStream();
+          setRecordButtonState(false);
+          if (!recordedChunks.length) {
+            return;
+          }
+
+          const mimeType = mediaRecorder.mimeType || 'audio/webm';
+          const extension = mimeType.includes('ogg') ? 'ogg' : 'webm';
+          pendingVoiceFile = new File(
+            recordedChunks,
+            'voice-message-' + Date.now() + '.' + extension,
+            { type: mimeType }
+          );
+          voiceInput.value = '';
+          renderPendingAttachments();
+          pollStatus.textContent = 'Голосовое сообщение готово к отправке';
+        });
+
+        mediaRecorder.start();
+        setRecordButtonState(true);
+        pollStatus.textContent = 'Идёт запись голосового сообщения';
+      } catch (error) {
+        stopRecordingStream();
+        setRecordButtonState(false);
+        setError('Не удалось получить доступ к микрофону. Проверьте разрешения браузера.');
       }
     }
 
@@ -196,60 +437,101 @@
       const preview = activeConversationItem.querySelector('[data-conversation-preview]');
       const time = activeConversationItem.querySelector('[data-conversation-time]');
       if (preview) {
-        preview.textContent = message.text;
+        preview.textContent = message.preview_text || message.text || 'Сообщение';
       }
       if (time) {
-        const date = new Date(message.created_at);
-        time.textContent = date.toLocaleString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-    }
-
-    function updateMessageCounters() {
-      if (chatCount) {
-        const currentCount = Number((chatCount.textContent.match(/\d+/) || ['0'])[0]);
-        chatCount.textContent = 'Сообщений: ' + (currentCount + 1);
-      }
-
-      if (activeConversationItem) {
-        const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
-        if (sidebarCount) {
-          const currentCount = Number((sidebarCount.textContent.match(/\d+/) || ['0'])[0]);
-          sidebarCount.textContent = 'Сообщений: ' + (currentCount + 1);
-        }
-      }
-    }
-
-    function syncMessageCounters() {
-      const messageCount = knownMessageCount;
-      if (chatCount) {
-        chatCount.textContent = 'РЎРѕРѕР±С‰РµРЅРёР№: ' + messageCount;
-      }
-
-      if (activeConversationItem) {
-        const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
-        if (sidebarCount) {
-          sidebarCount.textContent = 'РЎРѕРѕР±С‰РµРЅРёР№: ' + messageCount;
-        }
+        time.textContent = formatSidebarTimestamp(message.created_at);
       }
     }
 
     function refreshMessageCounters() {
-      const messageCountText = messageCountLabel ? messageCountLabel + ' ' + knownMessageCount : String(knownMessageCount);
       if (chatCount) {
-        chatCount.textContent = messageCountText;
+        chatCount.textContent = 'Сообщений: ' + knownMessageCount;
       }
 
       if (activeConversationItem) {
         const sidebarCount = activeConversationItem.querySelector('[data-conversation-count]');
         if (sidebarCount) {
-          sidebarCount.textContent = messageCountText;
+          sidebarCount.textContent = 'Сообщений: ' + knownMessageCount;
         }
       }
+    }
+
+    function scrollChatToBottom(force) {
+      const distanceToBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
+      if (force || distanceToBottom < 100) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    function buildMessageBubble(message) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex ' + (message.is_me ? 'justify-end' : 'justify-start');
+
+      const messageId = Number(message.id);
+      if (Number.isFinite(messageId) && messageId > 0) {
+        wrapper.dataset.messageId = String(messageId);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className =
+        (message.is_me ? 'bg-slate-900 text-white' : 'border border-slate-200 bg-white text-slate-900') +
+        ' max-w-[90%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]';
+
+      if (!message.is_me) {
+        const author = document.createElement('div');
+        author.className = 'mb-1 text-xs font-medium text-slate-500';
+        author.textContent = message.sender;
+        bubble.appendChild(author);
+      }
+
+      if (message.text) {
+        const text = document.createElement('div');
+        text.className = 'whitespace-pre-wrap break-words text-sm leading-6';
+        text.textContent = message.text;
+        bubble.appendChild(text);
+      }
+
+      if (message.has_image && message.image_url) {
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = message.text ? 'mt-3' : '';
+
+        const imageLink = document.createElement('a');
+        imageLink.href = message.image_url;
+        imageLink.target = '_blank';
+        imageLink.rel = 'noopener';
+        imageLink.className = 'block overflow-hidden rounded-2xl';
+
+        const image = document.createElement('img');
+        image.src = message.image_url;
+        image.alt = 'Вложенное изображение';
+        image.loading = 'lazy';
+        image.className = 'max-h-80 w-full rounded-2xl object-cover';
+        imageLink.appendChild(image);
+        imageWrapper.appendChild(imageLink);
+        bubble.appendChild(imageWrapper);
+      }
+
+      if (message.has_voice && message.voice_url) {
+        const voiceWrapper = document.createElement('div');
+        voiceWrapper.className = (message.text || message.has_image) ? 'mt-3' : '';
+
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.preload = 'none';
+        audio.src = message.voice_url;
+        audio.className = 'w-full max-w-xs';
+        voiceWrapper.appendChild(audio);
+        bubble.appendChild(voiceWrapper);
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'mt-2 text-[11px] ' + (message.is_me ? 'text-slate-300' : 'text-slate-400');
+      meta.textContent = formatTimestamp(message.created_at);
+      bubble.appendChild(meta);
+
+      wrapper.appendChild(bubble);
+      return wrapper;
     }
 
     function appendMessage(message) {
@@ -263,71 +545,55 @@
         emptyState.remove();
       }
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'flex ' + (message.is_me ? 'justify-end' : 'justify-start');
+      const wrapper = buildMessageBubble(message);
+      messagesList.appendChild(wrapper);
+
       if (Number.isFinite(messageId) && messageId > 0) {
-        wrapper.dataset.messageId = String(messageId);
         renderedMessageIds.add(messageId);
         lastId = Math.max(lastId, messageId);
         knownMessageCount += 1;
       }
 
-      const bubble = document.createElement('div');
-      bubble.className = (
-        message.is_me
-          ? 'bg-slate-900 text-white'
-          : 'border border-slate-200 bg-white text-slate-900'
-      ) + ' max-w-[88%] rounded-[1.6rem] px-4 py-3 shadow-sm sm:max-w-[78%]';
-
-      if (!message.is_me) {
-        const name = document.createElement('div');
-        name.className = 'mb-1 text-xs font-medium text-slate-500';
-        name.textContent = message.sender;
-        bubble.appendChild(name);
-      }
-
-      const text = document.createElement('div');
-      text.className = 'whitespace-pre-wrap break-words text-sm leading-6';
-      text.textContent = message.text;
-      bubble.appendChild(text);
-
-      const meta = document.createElement('div');
-      meta.className = 'mt-2 text-[11px] ' + (message.is_me ? 'text-slate-300' : 'text-slate-400');
-      meta.textContent = formatTimestamp(message.created_at);
-      bubble.appendChild(meta);
-
-      wrapper.appendChild(bubble);
-      messagesList.appendChild(wrapper);
-      updateSidebarPreview(message);
       refreshMessageCounters();
+      updateSidebarPreview(message);
       if (updatedBadge) {
         updatedBadge.textContent = formatTimestamp(message.created_at);
       }
-
       return true;
     }
 
+    function schedulePoll(delay) {
+      window.clearTimeout(pollTimer);
+      pollTimer = window.setTimeout(poll, delay);
+    }
+
     async function poll() {
+      if (isPolling) {
+        return;
+      }
+      isPolling = true;
+
+      const wasNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 120;
+      let nextDelay = POLL_INTERVAL_MS;
+
       try {
-        const wasNearBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 120;
         const response = await fetch(pollUrl + encodeURIComponent(lastId), {
           headers: { 'Accept': 'application/json' },
           credentials: 'same-origin'
         });
-        if (!response.ok) {
-          pollStatus.textContent = 'Не удалось обновить сообщения';
+
+        const data = await response.json().catch(function () {
+          return {};
+        });
+
+        if (!response.ok || !data.ok) {
+          nextDelay = response.status === 429 ? Math.max(Number(response.headers.get('Retry-After') || 0) * 1000, POLL_ERROR_BACKOFF_MS) : POLL_ERROR_BACKOFF_MS;
+          pollStatus.textContent = data.error || 'Не удалось обновить сообщения';
           return;
         }
 
-        const data = await response.json();
-        if (!data.ok) {
-          pollStatus.textContent = 'Не удалось обновить сообщения';
-          return;
-        }
-
-        const items = data.messages || [];
         let hasNewItems = false;
-        for (const item of items) {
+        for (const item of (data.messages || [])) {
           if (appendMessage(item)) {
             hasNewItems = true;
           }
@@ -338,7 +604,11 @@
         }
         pollStatus.textContent = 'Соединение активно';
       } catch (error) {
+        nextDelay = POLL_ERROR_BACKOFF_MS;
         pollStatus.textContent = 'Ошибка соединения';
+      } finally {
+        isPolling = false;
+        schedulePoll(nextDelay);
       }
     }
 
@@ -346,49 +616,61 @@
       if (isSending) return;
 
       const text = (input.value || '').trim();
-      if (!text) return;
+      const imageFile = selectedImageFile();
+      const voiceFile = selectedVoiceFile();
+      if (!text && !imageFile && !voiceFile) {
+        setError('Напишите сообщение, добавьте фото или прикрепите голосовое сообщение.');
+        return;
+      }
 
       isSending = true;
       sendButton.disabled = true;
-      sendError.classList.add('hidden');
+      setError('');
 
       if (!csrftoken) {
-        sendError.textContent = 'Не удалось получить защитный токен. Обновите страницу и попробуйте снова.';
-        sendError.classList.remove('hidden');
+        setError('Не удалось получить защитный токен. Обновите страницу и попробуйте снова.');
         isSending = false;
         sendButton.disabled = false;
         return;
       }
 
       try {
+        const payload = new FormData();
+        payload.append('message', text);
+        if (imageFile) {
+          payload.append('image_upload', imageFile);
+        }
+        if (voiceFile) {
+          payload.append('voice_upload', voiceFile);
+        }
+
         const response = await fetch(sendUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-CSRFToken': csrftoken
           },
           credentials: 'same-origin',
-          body: JSON.stringify({ text })
+          body: payload
         });
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response.json().catch(function () {
+          return {};
+        });
         if (!response.ok || !data.ok) {
-          sendError.textContent = data.error || 'Не удалось отправить сообщение.';
-          sendError.classList.remove('hidden');
+          setError(data.error || 'Не удалось отправить сообщение.');
           return;
         }
 
         input.value = '';
+        clearAttachments();
         if (data.message) {
           appendMessage(data.message);
           scrollChatToBottom(true);
-        } else {
-          await poll();
         }
+        pollStatus.textContent = 'Сообщение отправлено';
       } catch (error) {
-        sendError.textContent = 'Ошибка сети. Попробуйте ещё раз.';
-        sendError.classList.remove('hidden');
+        setError('Ошибка сети. Попробуйте ещё раз.');
       } finally {
         isSending = false;
         sendButton.disabled = false;
@@ -408,7 +690,43 @@
       }
     });
 
-    pollTimer = window.setInterval(poll, 2500);
+    pickImageButton.addEventListener('click', function () {
+      imageInput.click();
+    });
+
+    pickVoiceFileButton.addEventListener('click', function () {
+      pendingVoiceFile = null;
+      voiceInput.click();
+    });
+
+    recordVoiceButton.addEventListener('click', async function () {
+      await toggleVoiceRecording();
+    });
+
+    clearAttachmentsButton.addEventListener('click', function () {
+      clearAttachments();
+      setError('');
+    });
+
+    imageInput.addEventListener('change', function () {
+      renderPendingAttachments();
+      setError('');
+    });
+
+    voiceInput.addEventListener('change', function () {
+      pendingVoiceFile = null;
+      renderPendingAttachments();
+      setError('');
+    });
+
+    if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      recordVoiceButton.disabled = true;
+      recordVoiceButton.className = 'inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-400';
+      recordVoiceButton.textContent = 'Запись недоступна';
+    }
+
     scrollChatToBottom(true);
+    refreshMessageCounters();
+    schedulePoll(POLL_INTERVAL_MS);
   </script>
 {% endblock %}

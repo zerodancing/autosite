@@ -1,5 +1,6 @@
 from django.conf import settings
-from django.test import TestCase
+from django.core.cache import cache
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import CustomUser
@@ -24,6 +25,7 @@ class LogoutViewTests(TestCase):
 
 class LoginViewTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.password = "testpass123"
         self.user = CustomUser.objects.create_user(
             username="tester",
@@ -39,6 +41,38 @@ class LoginViewTests(TestCase):
 
         self.assertRedirects(response, reverse("accounts:profile"))
         self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.id)
+
+    @override_settings(
+        LIGHTWEIGHT_SECURITY_LIMITS={
+            "login_failures_per_ip": 2,
+            "login_failures_window_seconds": 60,
+            "login_requests_per_ip": 20,
+            "login_requests_window_seconds": 60,
+        }
+    )
+    def test_login_is_temporarily_blocked_after_multiple_failures(self):
+        login_url = reverse("accounts:login")
+
+        first_response = self.client.post(
+            login_url,
+            {"username": self.user.username, "password": "wrong-pass"},
+            REMOTE_ADDR="203.0.113.10",
+        )
+        second_response = self.client.post(
+            login_url,
+            {"username": self.user.username, "password": "wrong-pass"},
+            REMOTE_ADDR="203.0.113.10",
+        )
+        blocked_response = self.client.post(
+            login_url,
+            {"username": self.user.username, "password": "wrong-pass"},
+            REMOTE_ADDR="203.0.113.10",
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(blocked_response.status_code, 429)
+        self.assertContains(blocked_response, "Слишком много неудачных попыток входа", status_code=429)
 
 
 class SetLanguageViewTests(TestCase):

@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'autoservice.middleware.AdminRussianLocaleMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'autoservice.middleware.LightweightSecurityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -139,6 +140,36 @@ TIME_ZONE = (os.environ.get("DJANGO_TIME_ZONE", "Europe/Moscow") or "Europe/Mosc
 USE_I18N = True
 
 USE_TZ = True
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "autosite-default-cache",
+    }
+}
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(
+    os.environ.get("DJANGO_DATA_UPLOAD_MAX_MEMORY_SIZE", str(16 * 1024 * 1024))
+)
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(
+    os.environ.get("DJANGO_FILE_UPLOAD_MAX_MEMORY_SIZE", str(4 * 1024 * 1024))
+)
+
+LIGHTWEIGHT_SECURITY_LIMITS = {
+    "login_failures_per_ip": 8,
+    "login_failures_window_seconds": 15 * 60,
+    "login_requests_per_ip": 25,
+    "login_requests_window_seconds": 5 * 60,
+    "support_send_per_user": 30,
+    "support_send_per_ip": 45,
+    "support_send_window_seconds": 60,
+    "support_poll_per_user": 240,
+    "support_poll_per_ip": 360,
+    "support_poll_window_seconds": 60,
+    "support_conversation_create_per_user": 6,
+    "support_conversation_create_per_ip": 10,
+    "support_conversation_create_window_seconds": 10 * 60,
+}
 
 
 # Static files (CSS, JavaScript, Images)
